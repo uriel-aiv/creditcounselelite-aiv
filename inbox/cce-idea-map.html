@@ -46,6 +46,27 @@ ul.tree>li{padding-left:0}
 .panel ul{margin:0;padding-left:18px}
 .panel .guard{border-left:3px solid var(--warn);padding-left:10px;font-size:.88rem}
 .panel .guard h3{color:var(--warn)}
+.chains{display:grid;gap:14px}
+.chains>h2{font-family:var(--display);margin:0;font-size:1.4rem}
+.chains>p{margin:0;color:var(--muted);max-width:65ch}
+.chain{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:10px;min-width:0}
+.chain header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.chain h3{font-family:var(--display);margin:0;font-size:1.05rem}
+.tag{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 8px;border:1px solid currentColor}
+.tag.up{color:var(--accent)} .tag.down{color:var(--warn)} .tag.loop{color:var(--gold)}
+.chain .why{margin:0;color:var(--muted);font-size:.9rem;max-width:70ch}
+.steps{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.step{font:500 .85rem var(--body);background:transparent;color:var(--fg);border:1.5px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer}
+.step:hover,.step:focus-visible{border-color:var(--accent);outline:none}
+.arrow{font-size:.75rem;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+.arrow b{color:var(--gold);font-weight:600}
+.panel .links{display:grid;gap:8px}
+.lk{display:grid;gap:2px;text-align:left;font:inherit;font-size:.86rem;background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
+.lk:hover,.lk:focus-visible{border-color:var(--accent);outline:none}
+.lk small{color:var(--muted)}
+.lk .dir{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.hasLinks::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block}
+.node.sel.hasLinks::after{background:currentColor}
 .legend{font-size:.8rem;color:var(--muted)}
 </style>
 
@@ -62,7 +83,8 @@ ul.tree>li{padding-left:0}
     <div class="map"><ul class="tree" id="tree"></ul></div>
     <aside class="panel" id="panel" aria-live="polite"></aside>
   </div>
-  <p class="legend">Dashed nodes are new branch ideas to explore, not existing CCE positioning. Sources: business/0-percent-capital-playbook.md, offer-and-programs.md, faq.md, free-resources.md, brand/messaging.md.</p>
+  <section class="chains" id="chains"><h2>Connections</h2><p>How the branches feed each other. Each chain is a cause and effect story you can turn into a video, carousel or call talking point. Click a step to find it on the map.</p></section>
+  <p class="legend">Gold dots mark nodes that connect to other branches. Dashed nodes are new branch ideas to explore, not existing CCE positioning. Sources: business/0-percent-capital-playbook.md, offer-and-programs.md, faq.md, free-resources.md, brand/messaging.md.</p>
 </div>
 
 <script>
@@ -183,6 +205,25 @@ const T = {n:"Credit", root:true, a:["The hub: credit is a tool you learn to use
   ]}
 ]};
 
+
+const CHAINS=[
+ {t:"The growth flywheel",k:"up",loop:true,why:"Planned, spaced-out applications can build on each other: each well-managed round strengthens the profile the next round is judged on.",s:[
+  ["Banking relationships first","opens the door for"],["Positioning before applying","sets up"],["The Mass Apply list","can raise"],["Credit limit optimization","gives capital to"],["Deploy into assets","pays for"],["Payoff plan first","adds to"],["Building history","sets up the next"],["Every 6 months","starts again at"]]},
+ {t:"The inquiry spiral",k:"down",loop:true,why:"Scattered applications can pile up hard inquiries, which can lead to denials, which push people toward funders who apply on their behalf and add more inquiries.",s:[
+  ["Too many inquiries","weighs on"],["Scoring factors","can trigger"],["Why banks say no","pushes people to"],["Backend fees","often come with"],["Score damage","leads back to"]]},
+ {t:"Inquiries: spiral vs flywheel",k:"loop",why:"The same thing, an application, drives either outcome. The difference is sequencing. This is the contrast to teach: random applying vs a plan.",s:[
+  ["Too many inquiries","is the unplanned version of"],["The Mass Apply list","depends on"],["Positioning before applying","is what separates it from"],["Vs funding companies",""]]},
+ {t:"The utilization trap",k:"down",why:"When the intro period ends without a payoff plan, balances stay high, utilization rises, and the next application looks weaker.",s:[
+  ["Intro period ends","without a plan leads to"],["Utilization creep","weighs on"],["Scoring factors","can lead to"],["Why banks say no",""]]},
+ {t:"Time is the multiplier",k:"up",why:"Account age only grows with time, so early moves keep paying off. This is the slowest branch and the one that compounds longest.",s:[
+  ["Authorized user strategy","can lift average age in"],["Building history","is one of the"],["6 areas of your FICO","help reach"],["650+ is a strong start","makes room for"],["Mass Apply",""]]},
+ {t:"From credit to wealth",k:"up",why:"Funding only becomes wealth when it lands in something that earns, then gets protected.",s:[
+  ["Mass Apply","provides capital for"],["Real estate","is one way to"],["Deploy into assets","creates income for"],["Payoff plan first","frees up room for"],["Wealth protection","opens access to"],["Investment access",""]]},
+ {t:"The legacy loop",k:"loop",loop:true,why:"Teaching the next generation starts their clock early, so the family playbook gets stronger every cycle.",s:[
+  ["Children's credit","starts the clock on"],["Building history","grows into"],["Generational wealth","is shared with"],["You + your spouse","repeats"],["Every 6 months","is taught again through"]]},
+ {t:"Fees vs skill",k:"loop",why:"Paying a funder every round shrinks every round. Learning the skill once means each new round keeps its value.",s:[
+  ["Backend fees","teach you"],["Nothing learned","is the opposite of"],["Skill for life","is repeated"],["Every 6 months","keeps more of each round for"],["Deploy into assets",""]]}
+];
 let id=0; const all=[];
 function count(n){return n.c?n.c.reduce((s,k)=>s+1+count(k),0):0}
 function build(node,depth,path,parentUl){
@@ -203,16 +244,34 @@ function build(node,depth,path,parentUl){
   b.onclick=()=>{ if(node.ul){node.ul.hidden=!node.ul.hidden;b.setAttribute("aria-expanded",String(!node.ul.hidden))} show(node) };
   node.btn=b; parentUl.appendChild(li);
 }
+const byName=n=>all.find(x=>x.n===n);
+function linksOf(node){const out=[];CHAINS.forEach(c=>c.s.forEach(([n,lab],i)=>{if(n!==node.n)return;
+  const nx=c.s[i+1]||(c.loop?c.s[0]:null), pv=c.s[i-1]||(c.loop?c.s[c.s.length-1]:null);
+  if(nx&&lab)out.push({d:"Leads to",n:nx[0],lab,c:c.t});
+  if(pv&&pv[1])out.push({d:"Comes from",n:pv[0],lab:pv[1],c:c.t});}));return out}
+function reveal(node){let p=node;const chain=[];all.forEach(n=>{});
+  (function up(n){all.forEach(a=>{if(a.c&&a.c.includes(n)){if(a.ul){a.ul.hidden=false;a.btn.setAttribute("aria-expanded","true")}up(a)}})})(node);
+  if(node.ul){node.ul.hidden=false;node.btn.setAttribute("aria-expanded","true")}
+  show(node);node.btn.scrollIntoView({block:"center",behavior:"smooth"});node.btn.focus({preventScroll:true})}
 function show(node){
   all.forEach(n=>n.btn.classList.toggle("sel",n===node));
   const p=document.getElementById("panel");
   const kids=node.c?`<div><h3>Branches</h3><ul>${node.c.map(k=>`<li>${k.n}</li>`).join("")}</ul></div>`:"";
   const ang=node.a?`<div><h3>Content angles</h3><ul>${node.a.map(x=>`<li>${x}</li>`).join("")}</ul></div>`:"";
+  const L2=linksOf(node);
+  const lk=L2.length?`<div><h3>Connections</h3><div class="links">${L2.map(l=>`<button class="lk" data-n="${l.n}"><span class="dir">${l.d}</span><span>${l.d==="Leads to"?node.n+" "+l.lab+" <b>"+l.n+"</b>":"<b>"+l.n+"</b> "+l.lab+" "+node.n}</span><small>${l.c}</small></button>`).join("")}</div></div>`:"";
   const g=node.g?`<div class="guard"><h3>Guardrail</h3>${node.g}</div>`:"";
-  p.innerHTML=`<div class="path">${node.path.join(" › ")||"Start here"}</div><h2>${node.n}</h2>${ang}${kids}${g}`;
+  p.innerHTML=`<div class="path">${node.path.join(" › ")||"Start here"}</div><h2>${node.n}</h2>${ang}${kids}${lk}${g}`;
+  p.querySelectorAll(".lk").forEach(b=>b.onclick=()=>reveal(byName(b.dataset.n)));
 }
 build(T,0,[],document.getElementById("tree"));
 show(T);
+all.forEach(n=>{if(linksOf(n).length)n.btn.classList.add("hasLinks")});
+const box=document.getElementById("chains");
+CHAINS.forEach(c=>{const d=document.createElement("article");d.className="chain";
+  const tag=c.k==="up"?'<span class="tag up">Builds up</span>':c.k==="down"?'<span class="tag down">Drags down</span>':'<span class="tag loop">Contrast</span>';
+  d.innerHTML=`<header><h3>${c.t}</h3>${tag}${c.loop?'<span class="tag loop">↻ Loops</span>':""}</header><p class="why">${c.why}</p><div class="steps">${c.s.map(([n,l],i)=>`<button class="step" data-n="${n}">${n}</button>`+(l&&(i<c.s.length-1||c.loop)?`<span class="arrow">→ <b>${l}</b> →</span>`:"")).join("")}</div>`;
+  d.querySelectorAll(".step").forEach(b=>b.onclick=()=>reveal(byName(b.dataset.n)));box.appendChild(d)});
 const setAll=h=>all.forEach(n=>{if(n.ul&&!n.root){n.ul.hidden=h;n.btn.setAttribute("aria-expanded",String(!h))}});
 document.getElementById("expand").onclick=()=>setAll(false);
 document.getElementById("collapse").onclick=()=>setAll(true);
