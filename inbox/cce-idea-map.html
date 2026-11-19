@@ -62,7 +62,7 @@ ul.tree>li{padding-left:0}
     <div class="map"><ul class="tree" id="tree"></ul></div>
     <aside class="panel" id="panel" aria-live="polite"></aside>
   </div>
-  <p class="legend">Dashed nodes are new branch ideas to explore, not existing CCE positioning.</p>
+  <p class="legend">Dashed nodes are new branch ideas to explore, not existing CCE positioning. Sources: business/0-percent-capital-playbook.md, offer-and-programs.md, faq.md, free-resources.md, brand/messaging.md.</p>
 </div>
 
 <script>
@@ -73,53 +73,113 @@ const G = {
   notRepair:"CCE is education and coaching, not credit repair, a lender or a broker. Lenders decide approvals.",
   proof:"Any testimonial or average figure needs a results-vary line; testimonials are not typical."
 };
-const T = {n:"Credit", root:true, a:["The hub: credit is a tool you learn to use, not a score you chase."], g:G.notRepair, c:[
-  {n:"Credit Cards", c:[
+const L=(n,a,g,dir)=>({n,a,g:g||G.noGuar,dir});
+const T = {n:"Credit", root:true, a:["The hub: credit is a tool you learn to use, not a score you chase.","Positioning: up to $500K+ in 0% intro APR funding, a skill you keep, no backend fees (site claim)"], g:G.notRepair, c:[
+  {n:"Credit Cards", a:["Cards are the main vehicle of the playbook"], c:[
     {n:"Opportunities", c:[
-      {n:"0% intro APR periods", a:["What an intro APR period actually is, in 30 seconds","How the playbook uses intro periods as working capital"], g:G.zero},
-      {n:"Business cards", a:["Personal vs business cards: what reports where","Why entrepreneurs separate business spending"], g:G.noGuar},
-      {n:"Rewards & travel points", a:["Points as a side benefit of spending you already do","Access beyond capital: travel and community pillar"], g:"Affiliate links (e.g. card offers) must be disclosed per the advertiser disclosure."},
-      {n:"Building history", a:["Every on-time payment is a brick","Age of accounts: why not to close your oldest card"], g:G.noGuar}
+      L("0% intro APR periods",["What an intro APR period actually is, in 30 seconds","Using intro periods as working capital for a deal"],G.zero),
+      L("Bank sign-up bonuses",["How sign-up bonuses stack value on spending you already planned","Foundation step: bonuses as a learning topic"]),
+      L("Credit limit optimization",["Why limits matter as much as approvals","Higher limits, lower rates as a member outcome (site claim)"]),
+      L("Rewards & travel points",["Points as a side benefit, not the goal","Video idea: How to increase your credit to receive travel benefits"],"Affiliate card links (milevalue.com ?aff=cce) must be disclosed."),
+      L("Card benefits",["Hidden card perks most people never use"]),
+      L("Building history",["Every on-time payment is a brick","Why not to close your oldest card"])
+    ]},
+    {n:"Application sequencing", a:["CCE's proprietary order of applications"], c:[
+      L("The Mass Apply list",["What a planned application day looks like","Why order matters more than volume"],G.noGuar+" Never echo \"90% approvals\" without results-vary context."),
+      L("Banking relationships first",["Open a relationship before you ask for credit","Bank contacts as a CCE asset"]),
+      L("Positioning before applying",["The 3 positioning steps from the free training"])
     ]},
     {n:"Risks", c:[
-      {n:"Intro period ends", a:["Plan the payoff before you swipe","Calendar every intro end date"], g:G.zero},
-      {n:"Utilization creep", a:["Why high balances can weigh on a profile","Spending on assets vs lifestyle"], g:G.attr}
+      L("Intro period ends",["Plan the payoff before you swipe","Calendar every intro end date"],G.zero),
+      L("Utilization creep",["High balances can weigh on a profile","Assets vs lifestyle spending"],G.attr),
+      L("Too many inquiries",["Why funding companies' shotgun applications can hurt"],G.noGuar),
+      L("Planning to default",["CCE is not for anyone planning to default on banks"],G.notRepair)
     ]}
   ]},
   {n:"Funding", c:[
-    {n:"Responsibility", c:[
-      {n:"Payoff plan first", a:["\"Don't borrow what you can't plan to repay\"","Build the exit before the entry"], g:G.zero},
-      {n:"Deploy into assets", a:["Capital into cash-flowing deals, not toys","Discipline pillar: coachable, action-driven"], g:G.noGuar},
-      {n:"Protect the profile", a:["Inquiry timing and why a plan matters","One round at a time"], g:G.noGuar}
+    {n:"Responsibility", a:["The branch that keeps the brand credible"], c:[
+      L("Payoff plan first",["\"Don't borrow what you can't plan to repay\"","Build the exit before the entry"],G.zero),
+      L("Deploy into assets",["Capital into cash-flowing deals, not toys","Discipline pillar: coachable, action-driven"]),
+      L("Protect the profile",["Inquiry timing; one round at a time","Monitoring & protection (Optimize step)"]),
+      L("Know who it's not for",["Shortcut seekers, done-for-you seekers, non-coachable"],G.notRepair),
+      L("Time commitment",["~30 min a day at first, ~2 h a week after 90 days (site claim)"])
     ]},
     {n:"Uses", c:[
-      {n:"Scale a business", a:["Inventory, ads, hiring with capital you control"], g:G.noGuar},
-      {n:"Real estate", a:["Funding for down payments or rehabs: walk through a deal","Founders' story: restaurant jobs to a $14M portfolio (site claim)"], g:G.proof}
+      L("Start or scale a business",["Inventory, marketing, hiring with capital you control"]),
+      L("Real estate",["Buy properties, pay contractors, flips, rentals","Video: How to buy properties using credit cards"],G.zero),
+      L("New income streams",["Video: How to dropship houses using credit cards"]),
+      L("Investment access",["First invites to deals, e.g. San Diego ground-up construction (site claim)"],"Don't present investment access as a return or a guarantee.")
     ]},
-    {n:"Vs funding companies", a:["Funders often charge 10–30% per round; CCE teaches it as a skill with no backend fees","\"Same system, repeated every 6 months\""], g:G.noGuar},
-    {n:"Denied → funded", a:["Common reasons banks say no, explained plainly","Free credit assessment call CTA"], g:G.attr}
+    {n:"Vs funding companies", c:[
+      L("Backend fees",["10–30% per round = $5K–$15K on $50K","Keep the upside yourself"]),
+      L("Score damage",["Funders can cause hard inquiries and damage"]),
+      L("Nothing learned",["You pay again every round; CCE teaches a repeatable skill"])
+    ]},
+    {n:"Denied → funded", c:[
+      L("Why banks say no",["Banks assess you with 45+ credit metrics","Read your report like an underwriter"],G.attr),
+      L("650+ is a strong start",["No perfect credit needed; 650+ FICO is the strongest typical start"],G.attr),
+      L("Timelines",["Some in 10 days, most 30–90, avg ~72–80 days (site claim)"],G.noGuar+" Lead with \"results vary\" on timelines.")
+    ]}
   ]},
-  {n:"Credit Profile", c:[
-    {n:"Payment history", a:["The single habit that matters most"], g:G.noGuar},
-    {n:"Utilization", a:["What the balance-to-limit ratio means"], g:G.attr},
-    {n:"Inquiries", a:["Hard vs soft pulls; why sequencing matters"], g:G.noGuar},
-    {n:"Age & mix", a:["Why your oldest account is an asset"], g:G.noGuar},
-    {n:"Personal vs business credit", dir:true, a:["Explore: EIN, entity setup, separating finances"], g:"Check offer-and-programs.md before claiming CCE teaches business credit building."}
+  {n:"The 4-Step Playbook", a:["The 0% Capital Playbook: Foundation → Optimize → Build → Leverage"], c:[
+    {n:"1 · Foundation", c:[
+      L("6 areas of your FICO",["The 6 key areas that make or break a score"]),
+      L("Reading credit reports",["Walk through a sample report line by line"]),
+      L("45+ bank metrics",["What underwriters actually look at"]),
+      L("Children's credit",["What to teach your kids about credit","Adding kids as authorized users: pros and cons"])
+    ]},
+    {n:"2 · Optimize", c:[
+      L("Scoring factors",["Payment history, utilization, age, mix, inquiries"],G.attr),
+      L("Monitoring & protection",["Fraud, freezes, alerts"]),
+      L("Improvement roadmap",["Step-by-step profile roadmap"],G.notRepair)
+    ]},
+    {n:"3 · Build", c:[
+      L("Authorized user strategy",["AU calculator: target 21+ accounts, 9+ yr avg age","Video: Buying & selling tradelines"],"Tradeline content is sensitive: education only, no promised score change."),
+      L("Business credit profile",["Video: How to build business credit & have more funding"]),
+      L("Mass Apply",["Bank-ready profile → higher limits, more approvals"],G.noGuar)
+    ]},
+    {n:"4 · Leverage", c:[
+      L("Convert credit to cash",["Explain the concept and its costs plainly"],G.zero),
+      L("Infinite banking",["Whole life insurance as a banking tool (via trusted connections)"],"Not licensed financial advice: refer to partners."),
+      L("Travel hacks",["Points, perks, lounges"]),
+      L("Wealth protection",["Trusts, asset protection, tax, bookkeeping network"],"Educational only; not legal or tax advice.")
+    ]}
+  ]},
+  {n:"Business Credit", c:[
+    L("Personal vs business",["What reports where; separating finances"]),
+    L("Non-PG pathways",["Business credit without a personal guarantee, where appropriate (Inner Circle)"]),
+    L("160+ tradeline resources",["Inner Circle resource list"]),
+    L("Entity & EIN setup",["Explore: setup basics before business credit"],"Not in the repo yet: confirm CCE teaches this before publishing.",true)
   ]},
   {n:"Repeatable Skill", c:[
-    {n:"Every 6 months", a:["The cycle explained on a calendar"], g:G.noGuar},
-    {n:"You + your spouse", a:["Couples doing the playbook together; family angle"], g:G.noGuar},
-    {n:"Skill for life", a:["Learn once, no backend fees"], g:G.notRepair}
+    L("Every 6 months",["The cycle on a calendar","Same system, repeated, no backend fees"]),
+    L("You + your spouse",["Couples doing the playbook together; both attend calls"]),
+    L("Skill for life",["Learn once, keep it"],G.notRepair)
+  ]},
+  {n:"Member Journey", a:["Use for funnel content and onboarding explainers"], c:[
+    L("Free training",["Watch The Free Training CTA"]),
+    L("Free assessment call",["15-minute call with an Education Coach","Program fit is decided on this call"]),
+    L("Welcome call ≤ 2 days",["Meet the expert team"]),
+    L("90-day roadmap",["Roadmap Kick-Off Call sets the plan"]),
+    L("Fund, leverage, repeat",["The loop every 6 months"])
+  ]},
+  {n:"Programs", c:[
+    L("Credit Legacy",["Training only: core system, personal Mass Apply"]),
+    L("90 Day Challenge",["Guided: accountability partner, 8 group sessions a month","Excludes Leverage"]),
+    L("Inner Circle",["Business funding, Leverage, founder 1:1s, 3 in-person events a year"],"Pricing isn't published: don't quote prices."),
   ]},
   {n:"Legacy & Mindset", c:[
-    {n:"Generational wealth", a:["\"A simple 4-step plan to build generational wealth\""], g:G.noGuar},
-    {n:"Education not taught", a:["Financial education isn't taught outside expensive universities"], g:G.attr},
-    {n:"Teaching kids credit", dir:true, a:["Explore: what to teach your kids about credit at 16"], g:"New angle: confirm it fits brand before publishing."},
-    {n:"Faith & family", a:["Faith-friendly, no-handouts work ethic tone"], g:G.attr}
+    L("Generational wealth",["\"A simple 4-step plan to build generational wealth\""]),
+    L("Education not taught",["Financial education isn't taught outside expensive universities"],G.attr),
+    L("Faith & family",["Faith-friendly, no-handouts work ethic"]),
+    L("Stop waiting until ready",["Ed Mylett closing quote angle"]),
+    L("Money mindset myths",["Explore: \"debt is always bad\" vs debt as a tool","Explore: good debt vs bad debt"],G.attr,true)
   ]},
   {n:"Proof & Community", c:[
-    {n:"Member wins", a:["$370K+ average funding (site claim)","4,000+ members (site claim)"], g:G.proof},
-    {n:"Network & deals", a:["Access beyond capital: deals, network, travel"], g:G.noGuar}
+    L("Member wins",["$370K+ average funding (site claim)","4,000+ members (site claim)"],G.proof),
+    L("Founder story",["Restaurant jobs to a $14M portfolio (site claim)","Video: From house arrest to $3.5M net worth"],G.proof),
+    L("Network & deals",["Deals, network, travel, in-person intensives"]),
+    L("Ready. Set. Go. REI podcast",["Clip podcast moments into shorts"])
   ]}
 ]};
 
