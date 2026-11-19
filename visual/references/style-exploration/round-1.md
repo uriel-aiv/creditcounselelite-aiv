@@ -3,7 +3,11 @@
 Log of every visual style explored for CCE ads/social in the AIVideo project, with decisions, prompts patterns and asset IDs.
 Source: AIVideo project "CCE" (https://www.aivideo.com/edit/77b9a3f28a694c7c885eb5978627a64b) · Last updated: 2026-11-19
 
-All images live in the AIVideo project (folder `Style Round 1/<NN Style>`, canvas frames with the same names). Superseded versions are in each style's `Old` subfolder, never deleted. Every style has a text version and a text-free version.
+Each style has a folder here: `NN-style-name/inspo/` (the reference images the user shared) and `NN-style-name/generated/` (final AI generations as JPG, max 2048px; `_no-text` = text-free version). Full-res originals and superseded versions live in the AIVideo project (folder `Style Round 1/<NN Style>`, canvas frames with the same names). Superseded versions are in each style's `Old` subfolder, never deleted. Every style has a text version and a text-free version.
+
+## Inspo usage note
+Inspo images are third-party work (some show real public figures, brand logos or artist marks). Internal reference only: never publish, post or use them in ads.
+Inspo for 05/05B (toy bricks) never reached the session; 02B has no separate inspo (uses 02's).
 
 ## House rules learned this round
 - **Brand fit first:** concepts must come from `business/` + `brand/messaging.md` (4 steps, 0% Capital Playbook, bank-ready, 45+ metrics, no backend fees, every 6 months, spouse, legacy). Generic "path/key" metaphors were rejected.
