@@ -12,6 +12,7 @@ Central knowledge base for the **Credit Counsel Elite (CCE)** brand: business fa
 | `workflows/` | Repeatable processes (ad production, content, onboarding, reviews) |
 | `prompts/` | Reusable prompts for copy, scripts, images, video |
 | `visual/` | Logos, colors, fonts, photos, videos, graphics, templates, moodboard |
+| `tools-and-links.md` | Links to external tools & projects (AIVideo, Drive, ads accounts) |
 | `inbox/` | Raw notes, call transcripts, ideas not yet filed |
 
 ## Quick facts
@@ -37,6 +38,7 @@ Central knowledge base for the **Credit Counsel Elite (CCE)** brand: business fa
 - [Compliance & legal](business/compliance-and-legal.md)
 - [Brand messaging](brand/messaging.md)
 - [Visual library](visual/README.md) · [Brand guide](visual/brand-guide.md) · [Asset sources](visual/asset-sources.md)
+- [Tools & links](tools-and-links.md) — AIVideo project, external tools
 - [Website map](website/site-map.md)
 - [Website issues & inconsistencies](website/issues-and-inconsistencies.md)
 
