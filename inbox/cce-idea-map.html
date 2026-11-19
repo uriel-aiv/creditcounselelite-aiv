@@ -1,0 +1,159 @@
+<title>CCE Idea Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: left-to-right branching tree, click a node to open its branch and see angles + guardrail in a side panel */
+:root{
+  --bg:#f6f7f4; --surface:#ffffff; --fg:#1a2420; --muted:#5d6b64; --line:#c9d3cd;
+  --accent:#1f6f54; --gold:#a8761d; --warn:#9c3d2e;
+  --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111816; --surface:#1a2320; --fg:#e7eeea; --muted:#9aaba2; --line:#34433d;
+  --accent:#5cc79d; --gold:#e0b25a; --warn:#e88a78; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111816; --surface:#1a2320; --fg:#e7eeea; --muted:#9aaba2; --line:#34433d;
+  --accent:#5cc79d; --gold:#e0b25a; --warn:#e88a78; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.5}
+.wrap{padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1400px;margin:0 auto;display:grid;gap:20px}
+header h1{font-family:var(--display);font-size:1.9rem;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.controls button{font:500 .85rem var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+.controls button:hover,.controls button:focus-visible{border-color:var(--accent);outline:none}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:1fr}}
+.map{overflow-x:auto;padding:8px 0}
+ul.tree,ul.tree ul{list-style:none;margin:0;padding:0}
+ul.tree ul{padding-left:28px;position:relative}
+ul.tree li{position:relative;padding:4px 0 4px 18px}
+ul.tree ul>li::before{content:"";position:absolute;left:0;top:-4px;bottom:0;border-left:1.5px solid var(--line)}
+ul.tree ul>li:last-child::before{bottom:calc(100% - 22px)}
+ul.tree ul>li::after{content:"";position:absolute;left:0;top:22px;width:16px;border-top:1.5px solid var(--line)}
+ul.tree>li{padding-left:0}
+.node{font:500 .92rem var(--body);color:var(--fg);background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.node:hover,.node:focus-visible{border-color:var(--accent);outline:none}
+.node.sel{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.node .cnt{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.node.sel .cnt{color:inherit;opacity:.8}
+.node.root{font:700 1.05rem var(--display);border-radius:8px;padding:8px 16px}
+.node.l1{font-family:var(--display);font-weight:700}
+.node.dir{border-style:dashed}
+.panel{position:sticky;top:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:12px}
+.panel .path{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.panel h2{font-family:var(--display);margin:0;font-size:1.3rem}
+.panel h3{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;margin:0 0 4px;color:var(--gold)}
+.panel ul{margin:0;padding-left:18px}
+.panel .guard{border-left:3px solid var(--warn);padding-left:10px;font-size:.88rem}
+.panel .guard h3{color:var(--warn)}
+.legend{font-size:.8rem;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>CCE Idea Map</h1>
+    <p>Branches of content and teaching ideas for Credit Counsel Elite. Click any node to open its branch and see content angles plus the compliance guardrail. Numbers come from the repo; ones marked (site claim) are unverified.</p>
+  </header>
+  <div class="controls">
+    <button id="expand">Expand all</button>
+    <button id="collapse">Collapse all</button>
+  </div>
+  <div class="main">
+    <div class="map"><ul class="tree" id="tree"></ul></div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+  <p class="legend">Dashed nodes are new branch ideas to explore, not existing CCE positioning.</p>
+</div>
+
+<script>
+const G = {
+  zero:"Say \"0% intro APR\" on cards, not free money or loans. Pair with: intro periods end, balances then accrue interest.",
+  noGuar:"No promised approvals, amounts, score changes or timelines. Use \"up to\", \"members have\", \"results vary\".",
+  attr:"Meta personal attributes: talk about the topic, never the viewer's condition (no \"your bad credit\").",
+  notRepair:"CCE is education and coaching, not credit repair, a lender or a broker. Lenders decide approvals.",
+  proof:"Any testimonial or average figure needs a results-vary line; testimonials are not typical."
+};
+const T = {n:"Credit", root:true, a:["The hub: credit is a tool you learn to use, not a score you chase."], g:G.notRepair, c:[
+  {n:"Credit Cards", c:[
+    {n:"Opportunities", c:[
+      {n:"0% intro APR periods", a:["What an intro APR period actually is, in 30 seconds","How the playbook uses intro periods as working capital"], g:G.zero},
+      {n:"Business cards", a:["Personal vs business cards: what reports where","Why entrepreneurs separate business spending"], g:G.noGuar},
+      {n:"Rewards & travel points", a:["Points as a side benefit of spending you already do","Access beyond capital: travel and community pillar"], g:"Affiliate links (e.g. card offers) must be disclosed per the advertiser disclosure."},
+      {n:"Building history", a:["Every on-time payment is a brick","Age of accounts: why not to close your oldest card"], g:G.noGuar}
+    ]},
+    {n:"Risks", c:[
+      {n:"Intro period ends", a:["Plan the payoff before you swipe","Calendar every intro end date"], g:G.zero},
+      {n:"Utilization creep", a:["Why high balances can weigh on a profile","Spending on assets vs lifestyle"], g:G.attr}
+    ]}
+  ]},
+  {n:"Funding", c:[
+    {n:"Responsibility", c:[
+      {n:"Payoff plan first", a:["\"Don't borrow what you can't plan to repay\"","Build the exit before the entry"], g:G.zero},
+      {n:"Deploy into assets", a:["Capital into cash-flowing deals, not toys","Discipline pillar: coachable, action-driven"], g:G.noGuar},
+      {n:"Protect the profile", a:["Inquiry timing and why a plan matters","One round at a time"], g:G.noGuar}
+    ]},
+    {n:"Uses", c:[
+      {n:"Scale a business", a:["Inventory, ads, hiring with capital you control"], g:G.noGuar},
+      {n:"Real estate", a:["Funding for down payments or rehabs: walk through a deal","Founders' story: restaurant jobs to a $14M portfolio (site claim)"], g:G.proof}
+    ]},
+    {n:"Vs funding companies", a:["Funders often charge 10–30% per round; CCE teaches it as a skill with no backend fees","\"Same system, repeated every 6 months\""], g:G.noGuar},
+    {n:"Denied → funded", a:["Common reasons banks say no, explained plainly","Free credit assessment call CTA"], g:G.attr}
+  ]},
+  {n:"Credit Profile", c:[
+    {n:"Payment history", a:["The single habit that matters most"], g:G.noGuar},
+    {n:"Utilization", a:["What the balance-to-limit ratio means"], g:G.attr},
+    {n:"Inquiries", a:["Hard vs soft pulls; why sequencing matters"], g:G.noGuar},
+    {n:"Age & mix", a:["Why your oldest account is an asset"], g:G.noGuar},
+    {n:"Personal vs business credit", dir:true, a:["Explore: EIN, entity setup, separating finances"], g:"Check offer-and-programs.md before claiming CCE teaches business credit building."}
+  ]},
+  {n:"Repeatable Skill", c:[
+    {n:"Every 6 months", a:["The cycle explained on a calendar"], g:G.noGuar},
+    {n:"You + your spouse", a:["Couples doing the playbook together; family angle"], g:G.noGuar},
+    {n:"Skill for life", a:["Learn once, no backend fees"], g:G.notRepair}
+  ]},
+  {n:"Legacy & Mindset", c:[
+    {n:"Generational wealth", a:["\"A simple 4-step plan to build generational wealth\""], g:G.noGuar},
+    {n:"Education not taught", a:["Financial education isn't taught outside expensive universities"], g:G.attr},
+    {n:"Teaching kids credit", dir:true, a:["Explore: what to teach your kids about credit at 16"], g:"New angle: confirm it fits brand before publishing."},
+    {n:"Faith & family", a:["Faith-friendly, no-handouts work ethic tone"], g:G.attr}
+  ]},
+  {n:"Proof & Community", c:[
+    {n:"Member wins", a:["$370K+ average funding (site claim)","4,000+ members (site claim)"], g:G.proof},
+    {n:"Network & deals", a:["Access beyond capital: deals, network, travel"], g:G.noGuar}
+  ]}
+]};
+
+let id=0; const all=[];
+function count(n){return n.c?n.c.reduce((s,k)=>s+1+count(k),0):0}
+function build(node,depth,path,parentUl){
+  node.id=id++; node.path=path; all.push(node);
+  const li=document.createElement("li");
+  const b=document.createElement("button");
+  b.className="node"+(node.root?" root":depth===1?" l1":"")+(node.dir?" dir":"");
+  b.id="n"+node.id;
+  b.innerHTML=`<span>${node.n}</span>`+(node.c?`<span class="cnt">${count(node)}</span>`:"");
+  b.setAttribute("aria-expanded","false");
+  li.appendChild(b);
+  if(node.c){
+    const ul=document.createElement("ul"); ul.hidden=depth>=1; node.ul=ul;
+    node.c.forEach(k=>build(k,depth+1,[...path,node.n],ul));
+    li.appendChild(ul);
+    b.setAttribute("aria-expanded",String(!ul.hidden));
+  }
+  b.onclick=()=>{ if(node.ul){node.ul.hidden=!node.ul.hidden;b.setAttribute("aria-expanded",String(!node.ul.hidden))} show(node) };
+  node.btn=b; parentUl.appendChild(li);
+}
+function show(node){
+  all.forEach(n=>n.btn.classList.toggle("sel",n===node));
+  const p=document.getElementById("panel");
+  const kids=node.c?`<div><h3>Branches</h3><ul>${node.c.map(k=>`<li>${k.n}</li>`).join("")}</ul></div>`:"";
+  const ang=node.a?`<div><h3>Content angles</h3><ul>${node.a.map(x=>`<li>${x}</li>`).join("")}</ul></div>`:"";
+  const g=node.g?`<div class="guard"><h3>Guardrail</h3>${node.g}</div>`:"";
+  p.innerHTML=`<div class="path">${node.path.join(" › ")||"Start here"}</div><h2>${node.n}</h2>${ang}${kids}${g}`;
+}
+build(T,0,[],document.getElementById("tree"));
+show(T);
+const setAll=h=>all.forEach(n=>{if(n.ul&&!n.root){n.ul.hidden=h;n.btn.setAttribute("aria-expanded",String(!h))}});
+document.getElementById("expand").onclick=()=>setAll(false);
+document.getElementById("collapse").onclick=()=>setAll(true);
+</script>
