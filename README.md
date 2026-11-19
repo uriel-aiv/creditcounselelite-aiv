@@ -11,7 +11,7 @@ Central knowledge base for the **Credit Counsel Elite (CCE)** brand: business fa
 | `website/` | Site map and page-by-page extraction of creditcounselelite.com |
 | `workflows/` | Repeatable processes (ad production, content, onboarding, reviews) |
 | `prompts/` | Reusable prompts for copy, scripts, images, video |
-| `assets/` | Links/references to logos, photos, brand files (no heavy binaries) |
+| `visual/` | Logos, colors, fonts, photos, videos, graphics, templates, moodboard |
 | `inbox/` | Raw notes, call transcripts, ideas not yet filed |
 
 ## Quick facts
@@ -36,6 +36,7 @@ Central knowledge base for the **Credit Counsel Elite (CCE)** brand: business fa
 - [Free resources & lead magnets](business/free-resources.md)
 - [Compliance & legal](business/compliance-and-legal.md)
 - [Brand messaging](brand/messaging.md)
+- [Visual library](visual/README.md) · [Brand guide](visual/brand-guide.md) · [Asset sources](visual/asset-sources.md)
 - [Website map](website/site-map.md)
 - [Website issues & inconsistencies](website/issues-and-inconsistencies.md)
 
