@@ -1,10 +1,11 @@
 # B-roll links
 
-Heavy video files kept out of git (over GitHub's 100 MB limit); download from the URL below.
-Source: creditcounselelite.com homepage · Last updated: 2026-11-19
+Heavy video files kept out of git; download from the URL.
+Source: creditcounselelite.com homepage (crawled 2026-11-19) · Last updated: 2026-11-19
 
-| File name (if saved locally) | Title | URL | Ratio | Duration | Size |
+| Suggested name | What it shows | Ratio | Duration | Size | URL |
 |---|---|---|---|---|---|
-| cce_video_broll_leverage-dominate-summit-25_16x9.mp4 | Homepage hero video: event highlights from the "Leverage & Dominate Summit '25" (stage talks by Brandon Elliott, attendee interviews, CCE banners) | https://assets.cdn.filesafe.space/1mEynaMVLnY871SOQ0TY/media/6a170bebd2af304d121c2fff.mp4 | 16:9 (1920x1080) | 2:39 | 249 MB |
+| cce_video_broll_leverage-dominate-summit-25_16x9.mp4 | Homepage hero: Leverage & Dominate Summit '25 highlights (stage talks, attendees, CCE banners) | 16:9 | 2:39 | 249 MB | https://assets.cdn.filesafe.space/1mEynaMVLnY871SOQ0TY/media/6a170bebd2af304d121c2fff.mp4 |
+| cce_video_broll_summit-attendee-interview_4k.mp4 | Attendee interview at summit in front of "ELITE / MEMBERS ONLY" wall | 16:9 4K | 2:27 | 1.1 GB | https://storage.googleapis.com/msgsndr/1mEynaMVLnY871SOQ0TY/media/6881190c4660fe9772339b28.mp4 |
 
-TODO: upload to the team Google Drive and add the share URL here.
+TODO: upload the large files to the team Google Drive and add share URLs.

@@ -74,3 +74,6 @@ All URLs above downloaded and checked by eye. Several labels were wrong; files w
 | b534a923….png | Event photo, Brandon with members | photos/lifestyle/cce_photo_event_brandon-members-night_01.png |
 | d5ddc5ea….png | Phone mockup of Ready. Set. Go. REI podcast | graphics/web/cce_mockup_podcast_ready-set-go-phone.png |
 | 6a170beb….mp4 | Leverage & Dominate Summit '25 highlights, 249 MB | over 100 MB, link only in videos/b-roll/links.md |
+
+## Videos found on other pages (2026-11-19)
+Second crawl of /member-wins, /how-it-works, /podcast, /features-apperances and the rest of the nav pages found 23 .mp4 files (the homepage crawl only caught 1). The 6 "member success videos" are not missing: their URLs sit in the page's player code. Every video is filed with its URL, description, ratio and length in `videos/*/links.md`. Files ≤30 MB are committed; larger ones are link only.
