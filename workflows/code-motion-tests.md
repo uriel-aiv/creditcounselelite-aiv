@@ -27,6 +27,7 @@ Source: Uriel's direction in chat, Nov 19–21 2026. Last updated: 2026-11-21 (r
 - Fonts: ANTON for headers, always ALL CAPS; Poppins for body text (Montserrat 2nd choice). Poppins as a header must be ALL CAPS + bold.
 - The official logo sits on black. Titles use the corporate colours only. Text over images gets a black overlay.
 - Motion-test brand kit (`lib/brand.js`): captions are white Poppins on a black overlay pill with a thin blue rule; the end card is the metal logo on black with "LEARN THE PLAYBOOK" in Anton (white + blue).
+- Playbook colours are a small detail only, never a replacement: the main blue, gold and light blue stay as they are. Each script step gets its Playbook colour (Foundation blue 0–7.0s, Fix maroon 7.0–12.3s, Build green 12.3–32.35s, Leverage teal 32.35s+, 0.35s crossfade) on the thin bar along the motion/founder seam and the rule under the captions.
 
 ## Compliance in graphics
 - Read `business/compliance-and-legal.md` first. No guarantees; not credit repair.
