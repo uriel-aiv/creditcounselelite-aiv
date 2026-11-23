@@ -22,6 +22,12 @@ Source: Uriel's direction in chat, Nov 19–21 2026. Last updated: 2026-11-21 (r
 - Everything stays well inside the frame, never on the edges; nothing overlaps.
 - Keep render times short (JPEG frame pipe, fewer blur samples, cached assets).
 
+## Brand (CCE Brand Style Guidelines 2025)
+- Corporate colours: blue `#004AAD` (main), black `#000000`, white `#FFFFFF`. Accents: light blue `#ADC8E3`, gold `#CB9938`. 0% Capital Playbook colours (Foundation, Fix, Build, Leverage): blue `#114BA7`, maroon `#6B0505`, green `#266235`, teal `#008C96`. The PDF's hex labels for gold and the Playbook colours are wrong; these values are sampled from the swatches.
+- Fonts: ANTON for headers, always ALL CAPS; Poppins for body text (Montserrat 2nd choice). Poppins as a header must be ALL CAPS + bold.
+- The official logo sits on black. Titles use the corporate colours only. Text over images gets a black overlay.
+- Motion-test brand kit (`lib/brand.js`): captions are white Poppins on a black overlay pill with a thin blue rule; the end card is the metal logo on black with "LEARN THE PLAYBOOK" in Anton (white + blue).
+
 ## Compliance in graphics
 - Read `business/compliance-and-legal.md` first. No guarantees; not credit repair.
 - No $ amounts in graphics. "0%" is an intro period.
