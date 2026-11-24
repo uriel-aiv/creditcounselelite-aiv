@@ -11,6 +11,7 @@ Central knowledge base for the **Credit Counsel Elite (CCE)** brand: business fa
 | `website/` | Site map and page-by-page extraction of creditcounselelite.com |
 | `workflows/` | Repeatable processes (ad production, content, onboarding, reviews) |
 | `prompts/` | Reusable prompts for copy, scripts, images, video |
+| `motion-kit/` | Code, art and tools for the code-rendered founder split-screen motion tests (see its README) |
 | `visual/` | Logos, colors, fonts, photos, videos, graphics, templates, moodboard |
 | `tools-and-links.md` | Links to external tools & projects (AIVideo, Drive, ads accounts) |
 | `inbox/` | Raw notes, call transcripts, ideas not yet filed |
@@ -37,6 +38,7 @@ Central knowledge base for the **Credit Counsel Elite (CCE)** brand: business fa
 - [Free resources & lead magnets](business/free-resources.md)
 - [Compliance & legal](business/compliance-and-legal.md)
 - [Brand messaging](brand/messaging.md)
+- [Code motion tests — rules](workflows/code-motion-tests.md) · [Motion kit — how to build and deliver](motion-kit/README.md)
 - [Visual library](visual/README.md) · [Brand guide](visual/brand-guide.md) · [Asset sources](visual/asset-sources.md)
 - [Tools & links](tools-and-links.md) — AIVideo project, external tools
 - [Website map](website/site-map.md)
