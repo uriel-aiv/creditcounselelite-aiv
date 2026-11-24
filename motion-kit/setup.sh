@@ -6,7 +6,8 @@
 set -euo pipefail
 KIT="$(cd "$(dirname "$0")" && pwd)"; SRC="${1:?give the path to highlights_1x1.mp4}"
 command -v ffmpeg >/dev/null || { echo "ffmpeg is missing"; exit 1; }
-cd "$KIT" && npm install && npx playwright install chromium
+cd "$KIT" && npm ci
+npx playwright install chromium || echo "WARNING: Chromium download failed; fine if a matching browser is already installed (e.g. PLAYWRIGHT_BROWSERS_PATH)"
 # founder footage -> JPEG frames the films read (1080x1080, 23.976 fps, f_00001.jpg ...). Not committed (large).
 mkdir -p "$KIT/footage"
 ffmpeg -v error -y -i "$SRC" -q:v 2 "$KIT/footage/f_%05d.jpg"

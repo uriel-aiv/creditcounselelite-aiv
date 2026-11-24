@@ -1,19 +1,16 @@
 {
-  "name": "cce-motion",
+  "name": "cce-motion-kit",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "description": "Code-rendered CCE founder split-screen motion tests (see README.md)",
+  "scripts": {},
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "playwright": "^1.63.0"
+    "playwright": "1.63.0"
   },
   "dependencies": {
-    "opentype.js": "^2.0.0",
-    "three": "^0.187.0"
+    "opentype.js": "2.0.0",
+    "three": "0.187.0"
   }
 }
