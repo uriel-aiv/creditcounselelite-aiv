@@ -32,6 +32,15 @@ Source: Uriel's direction in chat, Nov 19–23 2026. Last updated: 2026-11-23 (b
 - Motion-test brand kit (`lib/brand.js`): captions are white Poppins on a black overlay pill with a thin blue rule; the end card is the metal logo on black with "LEARN THE PLAYBOOK" in Anton (white + blue).
 - Playbook colours (blue, maroon, green, teal) expand the palette on the animated objects only: cards, dots, bars, tape labels, window title bars, icon discs, beams, dock tiles. Corporate blue stays the dominant colour, and gold and light blue stay as accents. Titles and big numbers stay in corporate colours. Captions keep the blue rule; no colour-changing divider. Exception: 10 Odd One Out (Visualize Value) stays strictly black and white, with no brand or Playbook colours.
 
+## Footage tests (new clips)
+- Final chosen styles (2026-11-24): 04 Instructional Diagrams, Toy Brick (Lego), 06 Money, 09 Desktop Mind, 10 Odd One Out, 11 Vox Explainer, 12 Soft Systems, 17 Brand Native. For new clips, build on the last approved versions (the brand versions; Lego = saturated v04; Odd One Out = black and white).
+- Each style gets its own new visuals for the clip's script, in that style's language; never reuse another style's visuals.
+- Clips with heavy baked-in graphics (VSL cutdowns): use the voice as voiceover with motion full-screen wherever the face is covered, and crop his face (above the burned captions) wherever it is clear. Never show a VSL founder full-screen.
+- Podcast clips: crop Brandon per shot (face-tracked); host-only shots become motion-only moments.
+- No "$" in captions or graphics; numbers without currency symbols, always with "Individual results vary. Education only." during claims (bonuses, 7–21x, 90% approval odds, portfolio, members).
+- The brand end card starts right after the last spoken word.
+- Full steps: `motion-kit/README.md` → "Footage tests".
+
 ## Delivery
 - Look at stills of every changed beat before rendering; look at one frame of the final MP4 after.
 - Never overwrite: bump the version (`_vNN_`) and keep old files. Brand versions go to `motion-tests/brand/`, originals to `motion-tests/<NN-style>/` on Uriel's Mac.
