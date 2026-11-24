@@ -1,9 +1,20 @@
 # Brand Guide
 
 Colors, typography and logo rules for Credit Counsel Elite.
-Source: colors sampled from the downloaded logo files; fonts and web colors read from creditcounselelite.com CSS (crawled 2026-11-19). Not yet confirmed by the brand team. · Last updated: 2026-11-19
+Source: official **CCE Brand Style Guidelines 2025** (`visual/cce-brand-style-guidelines-2025.pdf`, received 2026-11-23) — this section wins over everything below it. Older sections were inferred from the site and logo files (2026-11-19). · Last updated: 2026-11-23
 
-> Everything here is inferred from the live site and logo files, not from an official brand book. Confirm with the brand team before treating it as final.
+## Official guidelines (2025 PDF)
+- **Values line:** FAITH. FAMILY. ACCOUNTABLE. DETERMINATION. COMMUNITY. IMPACT. · EST 2017
+- **Corporate colours:** blue `#004AAD` (main), black `#000000`, white `#FFFFFF`.
+- **Accent colours:** light blue `#ADC8E3`, gold `#CB9938` (gold sampled from the swatch; the PDF labels it #ADC8E3 by mistake). The guide allows testing other accents.
+- **0% Capital Playbook colours** (the 4-step process: The Foundation, Fix, Build, Leverage): blue `#114BA7`, maroon `#6B0505`, green `#266235`, teal `#008C96` — sampled from the swatches; the PDF's hex labels (#004AAD/#000000) are wrong.
+- **Header font (main):** ANTON — always ALL CAPS + bold. 2nd choice: Have Heart Two (brush). 3rd: Poppins, ALL CAPS + bold when used as a header.
+- **Body font:** Poppins (main), Montserrat Classic (2nd). **Neoneon** (neon) only in white with a dark overlay (black preferred).
+- **Logos:** official metal logo (gold badge), official logo, transparent logo, circle logo, favicon. The official logo is used on black `#000000`; it may sit on images only with a black tint overlay.
+- **Titles** use the corporate colours only. **Text on images** gets a black overlay with adjustable transparency.
+- **Look of the guide itself:** black pages, a deep-blue light-ribbon background with dot meshes (`visual/references/brand-guide/cce_brand-guide_cover-background.jpg`), gold top/bottom bars with the values line, white neon headline + white brush script with a brush underline, section heads in Anton with blue rules.
+
+> The sections below were inferred from the live site and logo files before the official guide arrived. Where they disagree with the section above, the official guide wins.
 
 ## Colors
 | Role | Name | HEX | RGB | Notes |
