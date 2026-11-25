@@ -1,5 +1,6 @@
 /node_modules/
 footage/
+!tools/footage/
 deliveries/
 films/out/
 films/*/audio/*.wav
