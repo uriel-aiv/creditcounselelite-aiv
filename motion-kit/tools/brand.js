@@ -26,11 +26,11 @@ export function stepColor(t) {
 }
 // captions: white Poppins on a black overlay pill with a thin brand-blue rule
 export function captions(ctx, t, fh, CAPS) {
-  if (t > 56.6) return;
+  if (t > endAt()) return;
   const fs = M.clamp((fh - SEAM) / (DH - SEAM)), sy = DH - fh;
   const c = CAPS.find((c) => t >= c.start - 0.04 && t < c.until);
   if (!c) return;
-  const f = M.clamp((fh - SEAM) / (DH - SEAM)), y = M.lerp(DH - fh, 1600, f);
+  const f = M.clamp((fh - SEAM) / (DH - SEAM)), y = fh >= SEAM ? M.lerp(DH - fh, 1600, f) : M.lerp(1640, DH - SEAM, fh / SEAM);   // fh < SEAM: motion-only (voiceover) moments
   const k = Math.max(0, Math.min(1.06, M.spring(t - c.start + 0.04, { stiffness: 420, damping: 26 })));
   const text = c.text.length > 1 && c.text === c.text.toUpperCase() ? c.text.charAt(0) + c.text.slice(1).toLowerCase() : c.text;
   ctx.save(); ctx.font = M.font(46, 600, 'UI'); ctx.letterSpacing = '0px'; const w = ctx.measureText(text).width + 64;
@@ -40,9 +40,12 @@ export function captions(ctx, t, fh, CAPS) {
   ctx.fillStyle = BRAND.white; ctx.textAlign = 'center'; ctx.fillText(text, 0, 14); ctx.restore();
 }
 
+// end-card start (s): films set window.__END to their own speech end; default = the 59 s founder clip
+export const endAt = () => (typeof window !== 'undefined' && window.__END) || 56.6;
+
 // end card: the official metal logo on black, ANTON title in corporate colours, Poppins line + disclaimer
 export function endCard(ctx, t, IMG) {
-  if (t < 56.6) return;
+  const E0 = endAt(); if (t < E0) return; t = t - E0 + 56.6;   // timings below are written for 56.6
   const S = ctx.canvas.width / 1080, a = M.clamp((t - 56.6) / 0.2);
   ctx.save(); ctx.setTransform(S, 0, 0, S, 0, 0);
   ctx.globalAlpha = a; ctx.fillStyle = BRAND.black; ctx.fillRect(0, 0, 1080, 1920);

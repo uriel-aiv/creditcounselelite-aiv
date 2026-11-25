@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time setup for the CCE code motion kit.
 # Usage: ./setup.sh /path/to/highlights_1x1.mp4
-#   (on Uriel's Mac the source is /Users/uriel/UU/creditcounsel/highlights/highlights_1x1.mp4)
+#   (in the team's shared folder: $CCE_ROOT/highlights/highlights_1x1.mp4)
 # Needs: node 18+, ffmpeg/ffprobe, python3 with Pillow (only for the tools/*fx.py asset scripts).
 set -euo pipefail
 KIT="$(cd "$(dirname "$0")" && pwd)"; SRC="${1:?give the path to highlights_1x1.mp4}"

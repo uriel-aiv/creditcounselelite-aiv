@@ -2,7 +2,7 @@
 import os
 FILMS = os.environ.get('CCE_FILMS', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'films'))  # motion-kit/films
 import os, re, shutil, subprocess, sys
-ROOT = FILMS; POP = os.environ.get('POPPINS_DIR', '/tmp/fnt/poppins/files/'); ANTON = ROOT + '/cce-moneygreen/fonts/display.woff2'
+ROOT = FILMS; POP = os.environ.get('POPPINS_DIR', 'fonts/poppins/'); ANTON = ROOT + '/cce-moneygreen/fonts/display.woff2'
 PAL = {
  'cce-diagrams': [("blue: '#1150C2'", "blue: '#004AAD'"), ("ink: '#151515'", "ink: '#000000'")],
  'cce-bricks': [("red: '#E0303F'", "red: '#004AAD'"), ("yellow: '#F4CB2F'", "yellow: '#CB9938'"), ("red: 0xC4131F", "red: 0x7A0A0A"), ("blue: 0x0B57C2", "blue: 0x004AAD"), ("yellow: 0xF5C21A", "yellow: 0xCB9938"),

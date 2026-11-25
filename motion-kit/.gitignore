@@ -1,6 +1,9 @@
 /node_modules/
 footage/
+!tools/footage/
 deliveries/
 films/out/
 films/*/audio/*.wav
 *.bak
+footage-tests/*/footage/
+footage-tests/*/audio/
