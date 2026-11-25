@@ -107,7 +107,7 @@ Round 1 films are `films/cce-ft*`, round 2 films `films/cce-r2-*`; per-clip data
 | 17 Brand Native | VSL #4 → `..._footage-vsl4-blank-binder_v03` | Video 13 → `..._r2-video13-fine-print_v01` (VSL #3 skipped: credit-repair claims) |
 | **18 Card Ribbon (new)** | — | Video 17 → `cce_18-card-ribbon_r2-video17-moving-limits_v03` (film `cce-r2-18-cards`); Video 12 → `cce_18-card-ribbon_r2-video12-the-fee_v01` (film `cce-r2-18b-cards`) |
 | **18C Card Structures 3D (new)** | — | Video 17 → `cce_18c-card-structures-3d_r2-video17-moving-limits_v03` (film `cce-r2-18c-cards3d`); Video 14 → `cce_18c-card-structures-3d_r2-video14-small-transaction_v02` (film `cce-r2-18d-cards3d`) |
-| **19 Pixel Wealth (new)** | Video 3 → `cce_19-pixel-wealth_footage-video03_v02` (film `cce-ft19-pixel`) | — |
+| **19 Pixel Wealth (new)** | Video 3 → `cce_19-pixel-wealth_footage-video03_v02` (film `cce-ft19-pixel`) | Video 24 → `cce_19-pixel-wealth_footage-video24-authorized-users_v01` (`cce-ft19b-pixel`); VSL #2 → `cce_19-pixel-wealth_footage-vsl2-busboy_v01` (`cce-ft19c-pixel`) |
 
 ### Pipeline for a new clip (run from `motion-kit/tools/footage/`, `FT_SRC` = folder of clips)
 1. **Get the clip.** Drive downloads are blocked from cloud shells; download in the browser (or ask the creative lead) into `$CCE_ROOT/footage-tests/`, then stage it.

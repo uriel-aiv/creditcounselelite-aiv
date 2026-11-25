@@ -173,6 +173,18 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
       - the case bobs as he walks.
     - **Banners:** spring down, type in, then lift and fade out (never reverse-type).
     - **Framing:** keep the avatar's head below the banners (avatar in the lower 60% of the panel). The disclaimer sits above the caption pill.
+  - **More clips (Video 24, VSL #2):**
+    - **New rooms** (retraced the same way): diner, city block, family living room, and a home office whose six empty wall frames become the six credit-profile "boxes" (filled in code by flood-fill from seed points).
+    - **Cast:** boss (sunglasses and gold chain), busboy (apron), dad and mom (grey hair), and two friends.
+    - **Poses:** walk, wave, cheer, carry, scrub and point.
+    - **Moves:**
+      - characters pop up from the floor (Habbo "enter room" puff) to fill a room ("4,000 members");
+      - cards arc from hand to hand;
+      - thought bubbles hold an icon with a centred red X;
+      - gold pins drop on rooftops ("real estate").
+    - **Busboy story:** the busboy becomes the boss through the mosaic cut on "today".
+    - **Building a new clip:** write a scene file (rooms, cuts, `drawPixels`, camera keys, `FH_KEYS`, hits) and run `python3 motion-kit/tools/pixel/build.py films/<new-film> <scene.js + common_tail.js> "<title>"` from the repo root; the engine stays in `cce-ft19-pixel`.
+    - **Motion-only (full-height) moments:** the zoom is raised automatically so the room fills the frame. The camera may look above the room's top edge to leave headroom for banners. VSL claims use "up to / as low as", with the disclaimer shown from the first claim to the end.
   - **Keep in mind:**
     - banners auto-shrink to fit the 180-px window;
     - walking paths must keep the avatar's head inside the window;

@@ -42,9 +42,20 @@ function toCanvas(b, outline = true) {   // a 1-pixel dark outline around every 
 }
 
 // ================================================================== the avatar (Habbo-style, facing front-right; mirrored for front-left)
-const K = { skin: '#EDB98C', skinS: '#C98E63', hair: '#22160F', hairH: '#4A3326', suit: '#1F2C72', suitS: '#162058', suitH: '#33459A', shirt: '#F4F1EA', gold: '#F2C14E', goldS: '#B8862B', pants: '#141C4A', shoe: '#101014', shine: '#5A5A66', glass: '#0B0B12', lip: '#8C3B32' };
-// pose: legs 0..3 (walk phase), arms: 'down' | 'swing0/1' | 'wave0/1' | 'up' | 'carry'
-function avatar(legs = 0, arms = 'down', bob = 0) {
+const KB = { skin: '#EDB98C', skinS: '#C98E63', hair: '#22160F', hairH: '#4A3326', suit: '#1F2C72', suitS: '#162058', suitH: '#33459A', shirt: '#F4F1EA', gold: '#F2C14E', goldS: '#B8862B', pants: '#141C4A', shoe: '#101014', shine: '#5A5A66', glass: '#0B0B12', lip: '#8C3B32' };
+const K = KB;
+// character looks: colour overrides + accessories
+const LOOKS = {
+  boss: {},
+  busboy: { suit: '#F4F1EA', suitS: '#CFCBC0', suitH: '#FFFFFF', shirt: '#F4F1EA', pants: '#2A2A33', glasses: false, chain: false, apron: true, hair: '#3B2A1E', hairH: '#5C4433' },
+  dad: { suit: '#5B6E4A', suitS: '#46573A', suitH: '#6E845B', shirt: '#E9E2CF', pants: '#3E3A33', hair: '#B9B9B9', hairH: '#DADADA', glasses: false, chain: false, specs: true, skin: '#E2A97E', skinS: '#B97F57' },
+  mom: { suit: '#A8435A', suitS: '#86334A', suitH: '#C2586F', shirt: '#F3E6E9', pants: '#3A2E40', hair: '#C9C2B4', hairH: '#E5DFD3', glasses: false, chain: false, bun: true, skin: '#F0C4A0', skinS: '#C99B76' },
+  friend1: { suit: '#2E8C7E', suitS: '#246E63', suitH: '#3AA595', shirt: '#F4F1EA', pants: '#2B3A55', hair: '#5A3418', hairH: '#7B4B26', glasses: false, chain: false, skin: '#C98B5E', skinS: '#A06A42' },
+  friend2: { suit: '#E0A43A', suitS: '#B7832A', suitH: '#F0BA55', shirt: '#FFF8E6', pants: '#3A3F6B', hair: '#1A1410', hairH: '#3A2E24', glasses: false, chain: false, bun: true, skin: '#8D5A3B', skinS: '#6E432A' },
+};
+// pose: legs 0..3 (walk phase), arms: 'down' | 'swing0/1' | 'wave0/1' | 'up' | 'carry' | 'scrub0/1' | 'point'
+function avatar(legs = 0, arms = 'down', bob = 0, look = {}) {
+  const K = { ...KB, glasses: true, chain: true, ...look };
   const b = buf(34, 46), y0 = bob; const OX = 2;
   const _px = px; const pxo = (bb, x, y, c) => _px(bb, x + OX, y, c);
   // legs + shoes
@@ -58,11 +69,13 @@ function avatar(legs = 0, arms = 'down', bob = 0) {
   // torso: blazer, open white shirt, gold chain
   rect(b, 8, 21 + y0, 14, 12, K.suit); rect(b, 8, 21 + y0, 2, 12, K.suitS); rect(b, 20, 22 + y0, 2, 10, K.suitH);
   poly(b, [[12.5, 21 + y0], [18.5, 21 + y0], [15.5, 27 + y0]], K.shirt);
-  [[12, 22], [13, 23], [14, 24], [15, 25], [16, 24], [17, 23], [18, 22]].forEach(([x, y]) => px(b, x, y + y0, K.gold));
-  px(b, 15, 26 + y0, K.goldS);
+  if (K.chain) { [[12, 22], [13, 23], [14, 24], [15, 25], [16, 24], [17, 23], [18, 22]].forEach(([x, y]) => px(b, x, y + y0, K.gold)); px(b, 15, 26 + y0, K.goldS); }
+  if (K.apron) { rect(b, 10, 26 + y0, 10, 12, '#22232B'); rect(b, 10, 26 + y0, 10, 1, '#3A3B46'); rect(b, 12, 28 + y0, 4, 3, '#33343F'); }
   rect(b, 8, 31 + y0, 14, 2, K.suitS); px(b, 15, 31 + y0, K.gold);   // belt + buckle
   // near arm
   if (arms === 'wave0' || arms === 'wave1' || arms === 'up') { const tilt = arms === 'wave1' ? 1.6 : 2.6; for (let i = 0; i < 10; i++) rect(b, 21 + Math.floor(i / tilt), 21 + y0 - i, 3, 2, K.suit); const hx = 21 + Math.floor(9 / tilt); rect(b, hx, 8 + y0, 3, 3, K.skin); px(b, hx + 1, 7 + y0, K.skin); px(b, hx + 3, 9 + y0, K.skin); rect(b, hx, 11 + y0, 3, 1, K.gold); }
+  else if (arms === 'scrub0' || arms === 'scrub1') { const dx = arms === 'scrub1' ? 3 : 0; rect(b, 21, 22 + y0, 3, 5, K.suit); rect(b, 23 + dx, 26 + y0, 4, 3, K.suit); rect(b, 26 + dx, 26 + y0, 3, 3, K.skin); rect(b, 25 + dx, 29 + y0, 5, 2, '#F2E9A0'); }
+  else if (arms === 'point') { rect(b, 21, 22 + y0, 3, 4, K.suit); rect(b, 23, 25 + y0, 6, 3, K.suit); rect(b, 29, 25 + y0, 3, 3, K.skin); px(b, 31, 28 + y0, K.skin); px(b, 31, 29 + y0, K.skin); }
   else if (arms === 'carry') { rect(b, 21, 22 + y0, 3, 9, K.suit); rect(b, 21, 31 + y0, 3, 2, K.skin); rect(b, 21, 29 + y0, 3, 1, K.gold); }
   else { rect(b, 21, 22 + y0 - swing, 3, 9, K.suit); rect(b, 21, 31 + y0 - swing, 3, 2, K.skin); rect(b, 21, 29 + y0 - swing, 3, 1, K.gold); }
   // neck + head (rounded block), slicked hair, sunglasses, smirk
@@ -70,7 +83,10 @@ function avatar(legs = 0, arms = 'down', bob = 0) {
   rect(b, 7, 5 + y0, 16, 15, K.skin); [[7, 5], [22, 5], [7, 19], [22, 19]].forEach(([x, y]) => px(b, x, y + y0, null)); px(b, 8, 19 + y0, null);
   rect(b, 7, 6 + y0, 2, 12, K.skinS); rect(b, 9, 12 + y0, 2, 3, K.skinS);   // shade side + ear
   rect(b, 8, 3 + y0, 15, 4, K.hair); rect(b, 7, 5 + y0, 3, 6, K.hair); rect(b, 9, 2 + y0, 12, 2, K.hair); [[11, 3], [12, 3], [13, 3], [17, 3], [18, 2]].forEach(([x, y]) => px(b, x, y + y0, K.hairH));
-  rect(b, 12, 11 + y0, 11, 3, K.glass); px(b, 17, 11 + y0, K.gold); rect(b, 12, 10 + y0, 11, 1, K.gold); px(b, 14, 11 + y0, '#8fa3ff'); px(b, 20, 11 + y0, '#8fa3ff');
+  if (K.glasses) { rect(b, 12, 11 + y0, 11, 3, K.glass); px(b, 17, 11 + y0, K.gold); rect(b, 12, 10 + y0, 11, 1, K.gold); px(b, 14, 11 + y0, '#8fa3ff'); px(b, 20, 11 + y0, '#8fa3ff'); }
+  else { rect(b, 13, 11 + y0, 2, 2, '#1A1420'); rect(b, 19, 11 + y0, 2, 2, '#1A1420'); px(b, 13, 11 + y0, '#FFFFFF'); px(b, 19, 11 + y0, '#FFFFFF'); rect(b, 12, 9 + y0, 3, 1, K.hair); rect(b, 18, 9 + y0, 3, 1, K.hair);
+    if (K.specs) { for (const ex of [12, 18]) { rect(b, ex, 10 + y0, 4, 1, '#6B5B4B'); rect(b, ex, 13 + y0, 4, 1, '#6B5B4B'); px(b, ex, 11 + y0, '#6B5B4B'); px(b, ex, 12 + y0, '#6B5B4B'); px(b, ex + 3, 11 + y0, '#6B5B4B'); px(b, ex + 3, 12 + y0, '#6B5B4B'); } px(b, 16, 11 + y0, '#6B5B4B'); px(b, 17, 11 + y0, '#6B5B4B'); } }
+  if (K.bun) { rect(b, 6, 6 + y0, 3, 10, K.hair); rect(b, 12, 0 + y0, 6, 3, K.hair); px(b, 13, 0 + y0, K.hairH); }
   px(b, 21, 15 + y0, K.skinS); rect(b, 16, 17 + y0, 4, 1, K.lip); px(b, 20, 16 + y0, K.lip);
   return b;
 }
@@ -137,12 +153,12 @@ function banner(ctx, s, cy, sc, t, a, b, col = '#FFFFFF') {   // in at a (pops d
 // ================================================================== sprites (built once)
 const SPR = {};
 function buildSprites() {
-  for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry']) SPR[`av_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0));
+  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk));
   SPR.case = toCanvas(briefcase()); SPR.cash = toCanvas(cashBrick()); SPR.bar = toCanvas(goldBar()); SPR.card = toCanvas(blackCard()); SPR.plane = toCanvas(plane());
   SPR.bubble = toCanvas(bubble(26, 16)); SPR.g0 = toCanvas(gull(0), false); SPR.g1 = toCanvas(gull(1), false); SPR.n0 = toCanvas(note(0)); SPR.n1 = toCanvas(note(1)); for (let i = 0; i < 3; i++) SPR['sp' + i] = toCanvas(sparkle(i / 3 + 0.1), false);
   for (let n = 1; n <= 9; n++) SPR['st' + n] = toCanvas(statement(n));
   // sprite sheet (exported for the team): one row per animation, frames left to right, 3x scale
-  const rows = [['WALK', [0, 1, 2, 3].map((l) => `av_${l}_${['down', 'swing0', 'down', 'swing1'][l]}`)], ['WAVE', ['av_0_wave0', 'av_0_wave1']], ['CHEER', ['av_0_up', 'av_1_up']], ['CARRY', ['av_0_carry', 'av_1_carry', 'av_2_carry', 'av_3_carry']], ['PROPS', ['case', 'cash', 'bar', 'card', 'plane', 'bubble']]];
+  const rows = [['WALK', [0, 1, 2, 3].map((l) => `av_${l}_${['down', 'swing0', 'down', 'swing1'][l]}`)], ['WAVE', ['av_0_wave0', 'av_0_wave1']], ['CHEER', ['av_0_up', 'av_1_up']], ['CARRY', ['av_0_carry', 'av_1_carry', 'av_2_carry', 'av_3_carry']], ['PROPS', ['case', 'cash', 'bar', 'card', 'plane', 'bubble']], ['CAST', ['av_0_down', 'busboy_0_down', 'dad_0_down', 'mom_0_down', 'friend1_0_down', 'friend2_0_down']], ['ACTIONS', ['busboy_0_scrub0', 'busboy_0_scrub1', 'av_0_point', 'dad_0_wave0', 'mom_0_carry', 'friend1_1_swing0']]];
   const sc = 3, cw = 36 * sc, ch = 50 * sc, sh = document.createElement('canvas'); sh.width = 6 * cw + 20; sh.height = rows.length * (ch + 10) + 10;
   const x = sh.getContext('2d'); x.imageSmoothingEnabled = false; x.fillStyle = '#C9D4E8'; x.fillRect(0, 0, sh.width, sh.height);
   rows.forEach(([, keys], j) => keys.forEach((k, i) => { const c = SPR[k]; x.drawImage(c, 10 + i * cw + (cw - c.width * sc) / 2, 10 + j * (ch + 10) + ch - c.height * sc, c.width * sc, c.height * sc); }));
@@ -165,10 +181,9 @@ function walker(t, path, speed = 22) {   // path: [[t0, x, y], [t1, x, y], ...] 
   return { x, y, moving, legs: moving ? phase : 0, arms: moving ? (phase === 1 ? 'swing0' : phase === 3 ? 'swing1' : 'down') : 'down', flip };
 }
 let CAMX = null;
-function drawAvatar(ctx, w, arms = null, flip = null) {
-  CAMX = w.x;
+function drawAvatar(ctx, w, arms = null, flip = null, who = 'av') {
   shadow(ctx, w.x, w.y);
-  spr(ctx, `av_${w.legs}_${arms || w.arms}`, w.x, w.y + 1, flip ?? w.flip);
+  spr(ctx, `${who}_${w.legs}_${arms || w.arms}`, w.x, w.y + 1, flip ?? w.flip);
 }
 
 // ================================================================== rooms, ambient animation, camera
@@ -383,9 +398,9 @@ M.film({
     drawPixels(PXX, t);
     ctx.save(); ctx.scale(S, S); ctx.imageSmoothingEnabled = false;
     // camera: a smooth, eased pan/zoom over the art grid (nearest-neighbour, so pixels stay hard-edged)
-    const top = Y(0), ph = Math.max(10, Math.min(DH, DH - fh) - top + (fh < SEAM ? 0 : 0)), cam = camAt(t);
-    const vw = Math.min(G, DW / cam.z), vh = Math.min(G, ph / cam.z);
-    const sx = clamp(cam.cx - vw / 2, 0, G - vw), sy = clamp(cam.cy - vh / 2, 0, G - vh);
+    const top = fh >= SEAM ? SEAM - fh : 0, ph = Math.max(10, DH - fh - top), cam = camAt(t), zz = Math.max(cam.z, ph / G, DW / G);
+    const vw = DW / zz, vh = ph / zz;
+    const sx = clamp(cam.cx - vw / 2, 0, G - vw), sy = clamp(cam.cy - vh / 2, -40, G - vh);   // may look above the room: headroom for banners
     const m = mosaicAt(t);
     if (m > 0.02) {   // retro mosaic at the cuts: the frame drops to big blocks and builds back up
       const blk = 1 + m * 26, mw = Math.max(2, Math.round(DW / blk)), mh = Math.max(2, Math.round(ph / blk));
