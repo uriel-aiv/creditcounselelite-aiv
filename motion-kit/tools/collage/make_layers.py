@@ -1,6 +1,7 @@
 # Photo Collage 2.5D layer prep (style 20).
 #   Scene with a person:  python3 make_layers.py <scene.png> <plate.png> <out-dir> <name>
-#   Prop on plain white:  python3 make_layers.py <prop.png> - <out-dir> <name> --prop
+#   Prop on plain white:  python3 make_layers.py <prop.png> - <out-dir> <name> --prop [--solid]
+#   (--solid for paper and other light, flat props: checks the page stays opaque)
 # scene.png = the full Nano Banana 2.1 image; plate.png = the same image edited by Nano Banana 2.1 with the subject erased.
 # Writes <name>_plate.jpg (1080 wide) and <name>_subj.png (the person, registered to the plate, transparent elsewhere),
 # or <name>.png for a prop (cropped to the object, max 900 px).
@@ -18,6 +19,12 @@ scene, plate, out, name = sys.argv[1:5]
 a = Image.open(scene).convert('RGB')
 if '--prop' in sys.argv:
     o = remove(a, session=new_session('isnet-general-use'), post_process_mask=True)
+    if '--solid' in sys.argv:   # white paper on white (forms, tickets, notes): the page itself goes see-through, so fill its convex outline
+        from scipy.spatial import ConvexHull
+        from PIL import ImageDraw
+        ys, xs = np.where(np.asarray(o.split()[3]) > 40); pts = np.c_[xs, ys]; hull = pts[ConvexHull(pts).vertices]
+        m = Image.new('L', a.size, 0); ImageDraw.Draw(m).polygon([tuple(p) for p in hull], fill=255)
+        o = a.convert('RGBA'); o.putalpha(m)
     o = o.crop(o.getbbox()); o.thumbnail((900, 900), Image.LANCZOS); o.save(f'{out}/{name}.png')
     sys.exit()
 
