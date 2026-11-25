@@ -144,7 +144,7 @@ function buildSprites() {
   const def = { dollar: [22, 9], card: [24, 5.3], clock: [26, 12], percent: [24, 15], calendar: [22, 5.6], person: [18, 7], refresh: [22, 7], doc: [22, 7], suitcase: [22, 5.5], bank: [22, 6] };
   for (const [k, [cells, cell]] of Object.entries(def)) {
     const pts = sampleMask(ICON[k], cells);
-    SP[k] = makeSprite(pts, cell, C.mint); SP[k + 'O'] = makeSprite(pts, cell, C.orange); SP[k + 'D'] = makeSprite(pts, cell, C.dim);
+    SP[k] = makeSprite(pts, cell, C.white); SP[k + 'O'] = makeSprite(pts, cell, C.orange); SP[k + 'D'] = makeSprite(pts, cell, C.dim);
   }
   // dashed outline used once a document is "gone"
   const c = document.createElement('canvas'), sz = Math.ceil(170 * S); c.width = c.height = sz; const x = c.getContext('2d');
@@ -169,7 +169,7 @@ function buildHalftones() {
     const d = Math.hypot(xx - cx, yy - cx);
     if (d > 176) return 0.95;                                     // rim
     if (d > 168) return 0.15;
-    if (inDollar(xx, yy)) return 0.9;
+    if (Math.abs(Math.hypot(xx - cx, yy - cx) - 110) < 14) return 0.9;   // inner ring (no currency symbol)
     return 0.25 + 0.4 * (1 - (xx + yy) / (2 * R));               // face, lit from the top-left
   });
   const G = 460, gc = G / 2;
@@ -433,24 +433,27 @@ const fr = (x) => x - Math.floor(x);
 function meter(ctx, x, y, w, v, k, t) {
   if (k <= 0.01) return;
   ctx.save(); ctx.globalAlpha *= k;
-  line(ctx, [[x, y], [x + w, y]], { w: 3, dash: [8, 10], march: t * 20, alpha: 0.6 });
-  for (let i = 0; i <= 6; i++) { node(ctx, x + w * i / 6, y, i % 3 ? 5 : 8, 1, C.mint); txt(ctx, `${i}%`, x + w * i / 6, y + 56, 30, UI, C.mint, 'center', i % 3 ? 0 : 0.8); }
-  ctx.fillStyle = C.orange; ctx.fillRect(x, y - 14, w * v / 6, 28);
-  node(ctx, x + w * v / 6, y, 18, 1, C.orange);
+  const wk = w * clamp(k * 1.2);
+  ctx.strokeStyle = C.white; ctx.lineWidth = 5; ctx.strokeRect(x, y - 30, wk, 60);
+  for (let i = 0; i <= 6; i++) { const xi = x + w * i / 6; if (xi > x + wk) break; ctx.fillStyle = C.white; ctx.fillRect(xi - 2, y + 34, 4, i % 3 ? 16 : 28); if (i % 3 === 0) txt(ctx, `${i}%`, xi, y + 110, 56, DISPLAY, C.white, 'center', 0.9); }
+  ctx.fillStyle = C.orange; ctx.fillRect(x + 8, y - 22, Math.max(0, (w - 16) * v / 6), 44);
+  node(ctx, x + 8 + (w - 16) * v / 6, y, 22, 1, C.orange);
   ctx.restore();
 }
 function n1(ctx, t) {
   if (t < 0.85 || t > 4.6) return;
   const ar = arrive(t, 0.85, 1.25), th = through(t, 4.2, 4.55);
   ctx.save(); ctx.globalAlpha = ar.alpha * th.alpha; camera(ctx, t, ar.s * th.s, 540, 470, 0.008 * Math.sin(t * 0.7));
-  // a card swipes in from the left; a fee chip peels off it toward the big number
-  spr(ctx, SP.card, 250 + (1 - E.outBack(clamp(P(t, 0.9, 1.3)))) * -300, Y(420), 2.2 * pop(t, 0.9), -0.06);
-  const kc = P(t, 1.3, 1.75, E.inOutCubic); if (t > 1.3) { const q = qAt([300, Y(420)], [480, Y(220)], [640, Y(360)], kc); spr(ctx, SP.percentO, q[0], q[1], 0.7 + 0.3 * kc, kc * 4, 1 - P(t, 1.62, 1.8)); }
-  if (t > 1.6) bigType(ctx, `${Math.max(1, Math.round(lerp(0, 3, P(t, 1.6, 2.0))))}%`, 720, Y(520), 300, 1, 0, 1.6, t, C.white, 'center');
-  txt(ctx, 'COMMON FEE', 720, Y(640), 72, DISPLAY, C.mint, 'center', P(t, 2.4, 2.7));
-  rings(ctx, 720, Y(400), [230, 310], P(t, 1.7, 2.1, E.outBack), t);
-  // "more common?" "yes": five cards in a row, each gets the same 3% chip
-  for (let i = 0; i < 5; i++) { const k = pop(t, 3.0 + i * 0.07); spr(ctx, SP.card, 150 + i * 195, Y(800), 0.9 * k, 0); if (t > 3.6 + i * 0.05) spr(ctx, SP.percentO, 190 + i * 195, Y(760), 0.38 * pop(t, 3.6 + i * 0.05), 0); }
+  // a big card swipes in from the left; a fee chip peels off it and becomes the 3%
+  const row = P(t, 2.9, 3.3, E.inOutCubic);   // "more common": the hero moves up to make room for the row
+  const cy = Y(lerp(400, 300, row));
+  spr(ctx, SP.card, 235 + (1 - E.outBack(clamp(P(t, 0.9, 1.3)))) * -420, cy, 3.4 * pop(t, 0.9) * lerp(1, 0.8, row), -0.06);
+  const kc = P(t, 1.3, 1.75, E.inOutCubic); if (t > 1.3) { const q = qAt([340, cy], [520, Y(140)], [740, cy - 20], kc); spr(ctx, SP.percentO, q[0], q[1], 0.9 + 0.6 * kc, kc * 4, 1 - P(t, 1.62, 1.8)); }
+  if (t > 1.6) bigType(ctx, `${Math.max(1, Math.round(lerp(0, 3, P(t, 1.6, 2.0))))}%`, 750, cy + 40, 340 * lerp(1, 0.85, row), 1, 0, 1.6, t, C.white, 'center');
+  txt(ctx, 'COMMON FEE', 750, cy + 150 * lerp(1, 0.85, row), 84, DISPLAY, C.mint, 'center', P(t, 2.2, 2.5));
+  rings(ctx, 750, cy - 40, [250, 330], P(t, 1.7, 2.1, E.outBack) * (1 - row), t);
+  // "more common? yes": a row of cards, each one stamped with the same fee chip
+  for (let i = 0; i < 4; i++) { const k = pop(t, 3.0 + i * 0.08), x = 165 + i * 250; spr(ctx, SP.card, x, Y(750), 1.4 * k, 0); if (t > 3.6 + i * 0.08) spr(ctx, SP.percentO, x + 30, Y(745), 0.6 * pop(t, 3.6 + i * 0.08), 0); }
   ctx.restore();
 }
 function n2(ctx, t) {
@@ -458,25 +461,28 @@ function n2(ctx, t) {
   const ar = arrive(t, 4.2, 4.6), th = through(t, 9.5, 9.85);
   ctx.save(); ctx.globalAlpha = ar.alpha * th.alpha; camera(ctx, t, ar.s * th.s, 540, 470, -0.008 + 0.006 * Math.sin(t * 0.6));
   // "some, like Chase or some of these other banks": one bank lights orange, then the others join
-  [[540, 5.0, true], [270, 6.3, false], [810, 6.5, false]].forEach(([x, t0, hot]) => { const k = pop(t, t0); spr(ctx, hot ? SP.bankO : SP.bank, x, Y(370) + 6 * Math.sin(t * 2 + x), 1.9 * k, 0); });
-  txt(ctx, 'SOME BANKS', 540, Y(150), 90, DISPLAY, C.white, 'center', P(t, 4.6, 4.9) * (1 - P(t, 7.0, 7.2)));
-  // "the last year or so": a 12-node ring under the banks fills month by month
-  const yr = P(t, 7.4, 9.3, E.inOutSine);
-  for (let m = 0; m < 12; m++) { const a = -Math.PI / 2 + m * TAU / 12, x = 540 + Math.cos(a) * 200, y = Y(640) + Math.sin(a) * 120; node(ctx, x, y, 10, P(t, 7.1 + m * 0.02, 7.3 + m * 0.02), yr * 12 > m ? C.orange : C.dim); }
-  line(ctx, arcPts(540, Y(640), 200, -Math.PI / 2, -Math.PI / 2 + TAU * yr, 60).map(([x, y]) => [x, Y(640) + (y - Y(640)) * 0.6]), { w: 4, color: C.orange });
-  txt(ctx, 'THE LAST YEAR', 540, Y(150), 90, DISPLAY, C.white, 'center', P(t, 7.2, 7.5));
+  const up = P(t, 7.0, 7.45, E.inOutCubic);
+  [[540, 5.0, true], [210, 6.3, false], [870, 6.5, false]].forEach(([x, t0, hot]) => { const k = pop(t, t0); spr(ctx, hot ? SP.bankO : SP.bank, lerp(x, 540 + (x - 540) * 0.62, up), Y(lerp(400, 230, up)) + 6 * Math.sin(t * 2 + x), lerp(2.8, 1.6, up) * k, 0); });
+  txt(ctx, 'SOME BANKS', 540, Y(720), 120, DISPLAY, C.white, 'center', P(t, 4.6, 4.9) * (1 - P(t, 6.9, 7.1)));
+  // "the last year or so": a 12-month ring fills month by month under the banks
+  const yr = P(t, 7.4, 9.3, E.inOutSine), RX = 330, RY = 190, CY = Y(640);
+  for (let m = 0; m < 12; m++) { const ang = -Math.PI / 2 + m * TAU / 12; node(ctx, 540 + Math.cos(ang) * RX, CY + Math.sin(ang) * RY, yr * 12 > m ? 18 : 12, P(t, 7.1 + m * 0.02, 7.3 + m * 0.02), yr * 12 > m ? C.orange : C.white); }
+  if (yr > 0) line(ctx, arcPts(540, CY, RX, -Math.PI / 2, -Math.PI / 2 + TAU * yr, 80).map(([x, y]) => [x, CY + (y - CY) * RY / RX]), { w: 8, color: C.orange });
+  txt(ctx, 'THE LAST', 540, CY - 20, 84, DISPLAY, C.white, 'center', P(t, 7.2, 7.5));
+  txt(ctx, 'YEAR', 540, CY + 70, 84, DISPLAY, C.orange, 'center', P(t, 7.3, 7.6));
   ctx.restore();
 }
 function n3(ctx, t) {
   if (t < 9.6) return;
   const ar = arrive(t, 9.6, 10.0);
   ctx.save(); ctx.globalAlpha = ar.alpha; camera(ctx, t, ar.s * (1 + 0.03 * prog(t, 10.0, 12.7)), 540, 470);
-  txt(ctx, 'MORE OF THAT', 540, Y(150), 90, DISPLAY, C.white, 'center', P(t, 9.8, 10.1) * (1 - P(t, 10.8, 11.0)));
   const v = lerp(3, 5, P(t, 10.9, 11.6, E.inOutCubic));
-  meter(ctx, 190, Y(640), 700, v, P(t, 9.8, 10.2), t);
-  if (t > 10.9) bigType(ctx, `${Math.round(v)}%`, 540, Y(460), 280, 1, 0, 10.9, t, C.orange, 'center');
-  const kin = P(t, 11.0, 11.35, E.outCubic); arrowTo(ctx, [190 + 700 * v / 6, Y(600)], Math.PI / 2, 110, kin, 0, t);
-  txt(ctx, 'FLAT FEE', 540, Y(150), 96, DISPLAY, C.white, 'center', P(t, 11.8, 12.1));
+  // the meter: the fee slides from 3% to 5%
+  meter(ctx, 120, Y(640), 840, v, P(t, 9.8, 10.3), t);
+  bigType(ctx, `${Math.round(v)}%`, 540, Y(420), 380, 1, 0, 9.9, t, t > 10.9 ? C.orange : C.white, 'center');
+  txt(ctx, 'MORE OF THAT', 540, Y(880), 100, DISPLAY, C.white, 'center', P(t, 9.9, 10.2) * (1 - P(t, 11.5, 11.7)));
+  const kin = P(t, 11.0, 11.35, E.outCubic); arrowTo(ctx, [128 + 824 * v / 6, Y(560)], Math.PI / 2, 120, kin, 0, t);
+  txt(ctx, 'FLAT FEE', 540, Y(880), 110, DISPLAY, C.orange, 'center', P(t, 11.75, 12.0));
   ctx.restore();
 }
 

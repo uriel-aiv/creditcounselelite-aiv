@@ -770,12 +770,13 @@ function r1(ctx, t) {
   grp(ctx, o, 540, Y(520), () => {
     txt(ctx, 'THE 800 CLUB', 540, Y(150), 100, DISPLAY, C.ink, { align: 'center', p: P(t, 2.0, 2.5) });
     const val = lerp(560, 805, P(t, 2.55, 3.25, E.outBack));
-    gauge(ctx, 400, Y(640), 230, val, P(t, 1.2, 2.2, E.inOutSine), 300);
+    gauge(ctx, 360, Y(660), 265, val, P(t, 1.2, 2.2, E.inOutSine), 300);
     const kn = clamp(sp(t, 3.25, SPRING.bouncy));
-    burst(ctx, 400, Y(300), 100, kn * out(t, 4.6), 7, C.blue, 13, 0.4 * t);
-    if (t > 2.55) txt(ctx, String(Math.round(val / 5) * 5 > 800 ? 800 : Math.round(val / 5) * 5), 400, Y(330), 84, DISPLAY, t > 3.25 ? C.white : C.ink, { align: 'center' });
-    calendarIcon(ctx, 800, Y(560), 1.0, t, 3.4, '30');
-    txt(ctx, 'DAYS', 800, Y(760), 64, DISPLAY, C.ink, { align: 'center', p: P(t, 3.7, 4.0) });
+    burst(ctx, 360, Y(290), 115, kn * out(t, 4.6), 7, C.blue, 13, 0.4 * t);
+    if (t > 2.55) txt(ctx, String(Math.round(val / 5) * 5 > 800 ? 800 : Math.round(val / 5) * 5), 360, Y(320), 96, DISPLAY, t > 3.25 ? C.white : C.ink, { align: 'center' });
+    calendarIcon(ctx, 830, Y(560), 1.0, t, 3.4, '30');
+    [['300', 360 - 265, 0], ['850', 360 + 265, 0]].forEach(([l, x]) => txt(ctx, l, x, Y(730), 44, DISPLAY, C.ink, { align: 'center', p: P(t, 1.8, 2.2) }));
+    txt(ctx, 'DAYS', 830, Y(760), 72, DISPLAY, C.ink, { align: 'center', p: P(t, 3.7, 4.0) });
   });
   disclaim(ctx, P(t, 2.4, 2.6) * (1 - P(t, 5.2, 5.4)));
 }
@@ -790,6 +791,7 @@ function r2(ctx, t) {
   if (t < 5.2 || t > 7.5) return; const k = clamp(sp(t, 5.3, SPRING.bouncy)) * out(t, 6.95);
   grp(ctx, k, 540, Y(520), () => {
     txt(ctx, 'STEP 1: FIX', 540, Y(150), 100, DISPLAY, C.ink, { align: 'center' });
+    ctx.save(); ctx.translate(540, Y(540)); ctx.scale(1.3, 1.3); ctx.translate(-540, -Y(520));
     // the bolt: a hexagon on a plate
     ctx.save(); ctx.fillStyle = C.white; rrect(ctx, 290, Y(330), 500, 380, 16); ctx.fill(); ctx.restore();
     stroke(ctx, [[290, Y(330)], [790, Y(330)], [790, Y(710)], [290, Y(710)], [290, Y(330)]], { w: 6, seed: 70 });
@@ -799,7 +801,8 @@ function r2(ctx, t) {
     // motion arcs while turning
     if ((t > 5.55 && t < 5.9) || (t > 6.05 && t < 6.4)) stroke(ctx, arcPts(hx, hy, 150, 150, -0.2, 0.9, 20), { w: 5, seed: 72 + Math.floor(t * 8) });
     const kc = clamp(sp(t, 6.65, SPRING.bouncy)); if (kc > 0.01) { burst(ctx, 760, Y(360), 80, kc, 9, C.blue, 11, t); stroke(ctx, [[728, Y(362)], [752, Y(388)], [796, Y(334)]], { w: 12, color: C.white, p: P(t, 6.7, 6.9), seed: 74 }); }
-    txt(ctx, 'DONE', 540, Y(800), 72, DISPLAY, C.blue, { align: 'center', p: P(t, 6.7, 6.95) });
+    ctx.restore();
+    txt(ctx, 'DONE', 540, Y(880), 96, DISPLAY, C.blue, { align: 'center', p: P(t, 6.7, 6.95) });
   });
 }
 // the profile sheet: six boxes; three of them are fix-related and get filled one by one as he names them
@@ -827,8 +830,14 @@ const BOXT = [13.4, 0, 15.2, 0, 18.7, 0];
 function r3(ctx, t) {
   if (t < 7.1) return;
   const ks = clamp(sp(t, 7.4, SPRING.bouncy)), fx = P(t, 9.9, 10.4);
-  txt(ctx, '6 BOXES = YOUR PROFILE', 540, Y(150), 84, DISPLAY, C.ink, { align: 'center', p: P(t, 7.4, 8.0) * (1 - P(t, 9.8, 9.9)) });
-  txt(ctx, '3 ARE FIX-RELATED', 540, Y(150), 92, DISPLAY, C.blue, { align: 'center', p: P(t, 9.95, 10.5) });
+    // camera: zoom into each fix-related box as it is named, then pull back to the whole sheet
+  const FOC = [[11.9, 14.7, 0], [14.9, 18.0, 2], [18.15, 20.6, 4]];
+  let zf = 0, zc = BOX6[0];
+  FOC.forEach(([a, b, i], n) => { const kin = P(t, a, a + 0.45, E.inOutCubic), kout = n < 2 ? 0 : P(t, b, b + 0.5, E.inOutCubic); if (t >= a - 0.01 && t < b + (n < 2 ? 0.25 : 0.6)) { zf = kin * (1 - kout); zc = BOX6[i]; } });
+  // between boxes: glide from one box to the next instead of popping out
+  FOC.forEach(([a, b, i], n) => { if (n < 2 && t >= b && t < FOC[n + 1][0] + 0.45) { const g = P(t, b, FOC[n + 1][0] + 0.45, E.inOutCubic); zf = 1; zc = [lerp(BOX6[i][0], BOX6[FOC[n + 1][2]][0], g), lerp(BOX6[i][1], BOX6[FOC[n + 1][2]][1], g)]; } });
+  const ZS = 2.05, zsc = lerp(1, ZS, zf), zx = lerp(540, zc[0], zf), zy = lerp(Y(590), Y(zc[1]), zf);
+  ctx.save(); if (zf > 0) { ctx.beginPath(); ctx.rect(0, 0, 1080, DH - FH); ctx.clip(); } ctx.translate(540, lerp(Y(590), Y(470), zf)); ctx.scale(zsc, zsc); ctx.translate(-zx, -zy);
   grp(ctx, ks, 540, Y(590), () => {
     ctx.save(); ctx.fillStyle = C.white; ctx.shadowColor = 'rgba(0,0,0,0.12)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8; rrect(ctx, 120, Y(240), 840, 680, 18); ctx.fill(); ctx.restore();
     stroke(ctx, [[120, Y(240)], [960, Y(240)], [960, Y(920)], [120, Y(920)], [120, Y(240)]], { w: 6, seed: 180 });
@@ -842,6 +851,13 @@ function r3(ctx, t) {
       if (fix) { boxIcon(ctx, i, x, y, t); const lb = BOXLBL[i].split('\n'); lb.forEach((l, j) => txt(ctx, l, x + 22, y - 6 + j * 36, 32, DISPLAY, C.ink, { p: P(t, BOXT[i], BOXT[i] + 0.4) })); }
     });
   });
+  ctx.restore();
+  // titles sit on top of the sheet only while the camera is pulled back
+  const zt = clamp(1 - zf * 3);
+  ctx.save(); ctx.globalAlpha *= zt;
+  txt(ctx, '6 BOXES = YOUR PROFILE', 540, Y(150), 84, DISPLAY, C.ink, { align: 'center', p: P(t, 7.4, 8.0) * (1 - P(t, 9.8, 9.9)) });
+  txt(ctx, '3 ARE FIX-RELATED', 540, Y(150), 92, DISPLAY, C.blue, { align: 'center', p: P(t, 9.95, 10.5) });
+  ctx.restore();
   disclaim(ctx, P(t, 12.0, 12.2));
 }
 

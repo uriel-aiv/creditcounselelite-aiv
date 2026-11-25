@@ -144,7 +144,7 @@ function buildSprites() {
   const def = { dollar: [22, 9], card: [24, 5.3], clock: [26, 12], percent: [24, 15], calendar: [22, 5.6], person: [18, 7], refresh: [22, 7], doc: [22, 7], suitcase: [22, 5.5] };
   for (const [k, [cells, cell]] of Object.entries(def)) {
     const pts = sampleMask(ICON[k], cells);
-    SP[k] = makeSprite(pts, cell, C.mint); SP[k + 'O'] = makeSprite(pts, cell, C.orange); SP[k + 'D'] = makeSprite(pts, cell, C.dim);
+    SP[k] = makeSprite(pts, cell, C.white); SP[k + 'O'] = makeSprite(pts, cell, C.orange); SP[k + 'D'] = makeSprite(pts, cell, C.dim);
   }
   // dashed outline used once a document is "gone"
   const c = document.createElement('canvas'), sz = Math.ceil(170 * S); c.width = c.height = sz; const x = c.getContext('2d');
@@ -169,7 +169,7 @@ function buildHalftones() {
     const d = Math.hypot(xx - cx, yy - cx);
     if (d > 176) return 0.95;                                     // rim
     if (d > 168) return 0.15;
-    if (inDollar(xx, yy)) return 0.9;
+    if (Math.abs(Math.hypot(xx - cx, yy - cx) - 110) < 14) return 0.9;   // inner ring (no currency symbol)
     return 0.25 + 0.4 * (1 - (xx + yy) / (2 * R));               // face, lit from the top-left
   });
   const G = 460, gc = G / 2;
@@ -427,56 +427,64 @@ function s7(ctx, t) {
 
 const fr = (x) => x - Math.floor(x);
 // ------------------------------------------------------------------ footage test: Video 29 "Paying a collection doesn't automatically solve everything" (15.2 s)
-// m1 1.0-3.3: "that's a myth"
+// m1 1.0-3.3: "that's a myth": the belief appears as a line of dot type, an orange cut goes through its centre, MYTH lands
 function m1(ctx, t) {
   if (t < 0.95 || t > 3.45) return;
   const th = through(t, 3.05, 3.4);
   ctx.save(); ctx.globalAlpha = th.alpha; camera(ctx, t, th.s * (1 + 0.04 * prog(t, 1.0, 3.0)), 540, 470, 0.01 * Math.sin(t * 0.7));
-  rings(ctx, 540, Y(470), [250, 340, 430], P(t, 1.0, 1.4, E.outBack), t);
-  const kin = P(t, 1.05, 1.4, E.outCubic), kout = P(t, 2.6, 2.95, E.inCubic);
-  arrowTo(ctx, [540 - 340, Y(470)], 0, 150, kin, kout, t); arrowTo(ctx, [540 + 340, Y(470)], Math.PI, 150, kin, kout, t);
-  if (t > 1.45) bigType(ctx, 'MYTH', 540, Y(470) + 120, 330, 1, prog(t, 2.9, 3.2), 1.45, t, C.mint, 'center');
-  const [f1, t1] = life(t, 2.05, 2.25, 2.4, 2.7);
-  line(ctx, [[150, Y(420)], [930, Y(420)]], { w: 6, color: C.orange, from: f1, to: t1 });
+  rings(ctx, 540, Y(470), [300, 400], P(t, 1.0, 1.4, E.outBack), t);
+  const kb = P(t, 1.05, 1.35);
+  txt(ctx, 'PAY IT OFF', 540, Y(330), 120, DISPLAY, C.white, 'center', kb);
+  txt(ctx, '= FIXED', 540, Y(460), 120, DISPLAY, C.white, 'center', P(t, 1.2, 1.5));
+  // the cut, centred on the two lines of type
+  ctx.save(); ctx.font = font(120, 400, DISPLAY); const cap = ctx.measureText('H').actualBoundingBoxAscent; ctx.restore();
+  const cy = (Y(330) - cap / 2 + Y(460) - cap / 2) / 2;   // midpoint of the two lines' visual centres
+  const [f1, t1] = life(t, 1.5, 1.72, 3.0, 3.2);
+  line(ctx, [[160, cy - 90], [920, cy + 90]], { w: 12, color: C.orange, from: f1, to: t1 });
+  if (t > 1.65) bigType(ctx, 'MYTH', 540, Y(840), 210, 1, prog(t, 2.9, 3.2), 1.65, t, C.orange, 'center');
   ctx.restore();
 }
-// m2 3.3-8.4: a collection on the report; pay it off; a lot of people do this
+// m2 3.3-8.4: a collection / charge-off sits on the report; people pay it off; a lot of people do this
 function m2(ctx, t) {
   if (t < 3.2 || t > 8.55) return;
   const ar = arrive(t, 3.2, 3.6), th = through(t, 8.2, 8.55);
   ctx.save(); ctx.globalAlpha = ar.alpha * th.alpha; camera(ctx, t, ar.s * th.s, 540, 470, -0.01 + 0.008 * Math.sin(t * 0.6));
+  const crowd = P(t, 7.35, 7.8, E.inOutCubic), dx = lerp(0, -170, crowd), dsc = lerp(1, 0.7, crowd);
   const kd = pop(t, 3.4);
-  spr(ctx, SP.doc, 330, Y(420), 2.3 * kd, -0.04 + 0.02 * Math.sin(t * 1.3));
-  // "collection" flags the report: a maroon node with a ring ping
-  const kc = pop(t, 3.75);
-  node(ctx, 440, Y(270), 26, kc, C.maroon);
-  if (t > 3.75) line(ctx, arcPts(440, Y(270), 34 + ((t - 3.75) % 0.9) * 80, 0, TAU, 50), { w: 3, color: C.maroon, alpha: (1 - ((t - 3.75) % 0.9) / 0.9) * 0.8 });
-  txt(ctx, 'COLLECTION', 330, Y(720), 84, DISPLAY, C.mint, 'center', P(t, 3.8, 4.1));
-  // "pay it off": dollars stream from the right into the report
-  for (let i = 0; i < 6; i++) {
-    const a = 5.75 + i * 0.09, k = P(t, a, a + 0.55, E.inOutCubic); if (t < a || k >= 1) continue;
-    const q = qAt([1000, Y(300 + i * 60)], [760, Y(120)], [420, Y(420)], k);
-    spr(ctx, SP.dollarO, q[0], q[1], 0.75 * (1 - 0.4 * k), k * 3, 1 - P(k, 0.8, 1));
+  spr(ctx, SP.doc, 330 + dx, Y(440), 3.2 * kd * dsc, -0.04 + 0.02 * Math.sin(t * 1.3));
+  // the two marks land on the report as tags
+  [['COLLECTION', 3.5, -40], ['CHARGE-OFF', 3.85, 60]].forEach(([w, t0, oy]) => { const k = pop(t, t0); if (k < 0.01) return;
+    ctx.save(); ctx.translate(330 + dx, Y(440) + oy * dsc); ctx.scale(k * dsc, k * dsc); ctx.rotate(-0.06); ctx.fillStyle = C.maroon; ctx.fillRect(-170, -38, 340, 76); txt(ctx, w, 0, 22, 58, DISPLAY, C.white, 'center'); ctx.restore(); });
+  // "pay it off": coins pour in from the right, a paid bar fills under the report
+  for (let i = 0; i < 8; i++) {
+    const a = 5.75 + i * 0.07, k = P(t, a, a + 0.5, E.inOutCubic); if (t < a || k >= 1) continue;
+    const q = qAt([-80, Y(600 + i * 25)], [90, Y(560)], [140 + 388 * P(t, 5.9, 6.6, E.outCubic), Y(780)], k);
+    spr(ctx, SP.dollarO, q[0], q[1], 1.0 * (1 - 0.4 * k), k * 3, 1 - P(k, 0.8, 1));
   }
-  if (t > 6.3) txt(ctx, 'PAY IT OFF', 780, Y(500), 96, DISPLAY, C.white, 'center', P(t, 6.3, 6.6) * (1 - P(t, 7.45, 7.6)));
-  // "a lot of people do this": a crowd of people pops in on the right
-  for (let i = 0; i < 9; i++) { const k = pop(t, 7.6 + i * 0.05); const x = 650 + (i % 3) * 140, y = Y(300 + Math.floor(i / 3) * 165); spr(ctx, SP.person, x, y + 4 * Math.sin(t * 3 + i), 1.25 * k, 0, 1); }
+  const pb = P(t, 5.9, 6.6, E.outCubic) * (1 - crowd);
+  if (pb > 0) { ctx.save(); ctx.strokeStyle = C.white; ctx.lineWidth = 4; ctx.strokeRect(130, Y(760), 400, 40); ctx.fillStyle = C.orange; ctx.fillRect(136, Y(766), 388 * pb, 28); ctx.restore(); }
+  txt(ctx, 'PAY IT OFF', 800, Y(820), 96, DISPLAY, C.white, 'center', P(t, 6.0, 6.3) * (1 - P(t, 7.2, 7.4)));
+  // "a lot of people do this": a 4x4 crowd fills the right side, row by row
+  for (let i = 0; i < 16; i++) { const k = pop(t, 7.55 + i * 0.035); const x = 560 + (i % 4) * 128, y = Y(220 + Math.floor(i / 4) * 140); spr(ctx, SP.person, x, y + 4 * Math.sin(t * 3 + i), 0.9 * k, 0, 1); }
+  txt(ctx, 'A LOT OF PEOPLE', 750, Y(790), 72, DISPLAY, C.white, 'center', P(t, 7.8, 8.1));
   ctx.restore();
 }
 // m3 8.4-11.34: they get scared, "my score just dropped a hundred points"
 function m3(ctx, t) {
   if (t < 8.35 || t > 11.6) return;
-  const ar = arrive(t, 8.35, 8.75), th = through(t, 11.15, 11.5);
+  const ar = arrive(t, 8.3, 8.6), th = through(t, 11.15, 11.5);
   ctx.save(); ctx.globalAlpha = ar.alpha * th.alpha; camera(ctx, t, ar.s * th.s, 540, 470, 0.012 * Math.sin(t * 0.8));
   const shake = t > 8.8 && t < 9.6 ? Math.sin((t - 8.8) * 50) * 10 * (1 - prog(t, 8.8, 9.6)) : 0;
-  spr(ctx, SP.person, 250 + shake, Y(470), 2.3 * pop(t, 8.5), 0, 1);
-  rings(ctx, 230, Y(470), [150, 200], P(t, 8.8, 9.1, E.outCubic) * out(t, 10.0), t, 0.2);
+  spr(ctx, SP.person, 260 + shake, Y(470), 3.4 * pop(t, 8.38), 0, 1);
+  for (let i = 0; i < 3; i++) { const f = fr(t * 1.4 + i / 3); if (t > 8.9 && t < 10.3) node(ctx, 400 + i * 22, Y(280) + f * 80, 9 * (1 - f), 1, C.light); }   // sweat drops
+  rings(ctx, 260, Y(470), [220, 290], P(t, 8.8, 9.1, E.outCubic) * out(t, 10.0), t, 0.2);
   if (t > 10.35) {
     const v = Math.round(lerp(0, 100, P(t, 10.4, 10.95, E.inOutSine)));
-    bigType(ctx, `-${v}`, 690, Y(470) + 120, 300, 1, prog(t, 11.05, 11.3), 10.35, t, C.orange, 'center');
+    bigType(ctx, `-${v}`, 720, Y(470) + 120, 300, 1, prog(t, 11.05, 11.3), 10.35, t, C.orange, 'center');
+    txt(ctx, 'POINTS', 720, Y(690), 72, DISPLAY, C.white, 'center', P(t, 10.8, 11.0) * (1 - P(t, 11.05, 11.3)));
     const kin = P(t, 10.4, 10.75, E.outCubic), kout = P(t, 11.0, 11.25, E.inCubic);
-    arrowTo(ctx, [690, Y(720)], Math.PI / 2, 140, kin, kout, t);
-  } else txt(ctx, 'SCARED', 690, Y(500), 120, DISPLAY, C.mint, 'center', P(t, 8.9, 9.2) * (1 - P(t, 10.1, 10.3)));
+    arrowTo(ctx, [720, Y(860)], Math.PI / 2, 110, kin, kout, t);
+  } else txt(ctx, 'SCARED', 720, Y(500), 150, DISPLAY, C.white, 'center', P(t, 8.9, 9.2) * (1 - P(t, 10.1, 10.3)));
   ctx.restore();
 }
 // m4 11.34-13.35 (motion only): they go to pay it off really quick
@@ -484,11 +492,11 @@ function m4(ctx, t) {
   if (t < 11.2 || t > 13.55) return;
   const ar = arrive(t, 11.2, 11.6), th = through(t, 13.15, 13.5);
   ctx.save(); ctx.globalAlpha = ar.alpha * th.alpha; camera(ctx, t, ar.s * th.s, 540, 470);
-  for (let i = 0; i < 14; i++) { const ph = fr(t * 1.6 + i / 14); const x = lerp(-80, 1160, ph), y = Y(250 + (i % 5) * 120) + 20 * Math.sin(i * 2 + t * 4); spr(ctx, (i % 3) ? SP.dollar : SP.dollarO, x, y, 0.8, ph * 6, Math.sin(Math.PI * ph)); }
+  for (let i = 0; i < 14; i++) { const ph = fr(t * 1.6 + i / 14); const x = lerp(-80, 1160, ph), y = Y(i % 2 ? 110 : 850) + 20 * Math.sin(i * 2 + t * 4); spr(ctx, (i % 3) ? SP.dollar : SP.dollarO, x, y, 1.0, ph * 6, 0.45 * Math.sin(Math.PI * ph)); }
   const kc = pop(t, 11.6);
-  spr(ctx, SP.clock, 540, Y(470), 1.5 * kc, 0, 1);
+  spr(ctx, SP.clock, 540, Y(470), 2.3 * kc, 0, 1);
   const ang = -Math.PI / 2 + TAU * 3 * P(t, 11.7, 13.1, E.inOutSine);
-  line(ctx, [[540, Y(470)], [540 + Math.cos(ang) * 110, Y(470) + Math.sin(ang) * 110]], { w: 7, color: C.white, alpha: kc });
+  line(ctx, [[540, Y(470)], [540 + Math.cos(ang) * 170, Y(470) + Math.sin(ang) * 170]], { w: 10, color: C.white, alpha: kc });
   node(ctx, 540, Y(470), 11, kc);
   txt(ctx, 'REALLY QUICK', 540, Y(800), 96, DISPLAY, C.white, 'center', P(t, 12.5, 12.8));
   ctx.restore();
@@ -500,7 +508,7 @@ function m5(ctx, t) {
   ctx.save(); ctx.globalAlpha = ar.alpha; camera(ctx, t, ar.s * (1 + 0.04 * prog(t, 13.6, 15.4)), 540, 470);
   rings(ctx, 300, Y(450), [230, 300], 1, t);
   // the report: paid... and the collection mark is still on it
-  spr(ctx, SP.doc, 300, Y(440), 2.3 * pop(t, 13.3), -0.03);
+  spr(ctx, SP.doc, 300, Y(440), 3.0 * pop(t, 13.3), -0.03);
   node(ctx, 400, Y(300), 26, pop(t, 13.4), C.maroon);
   line(ctx, arcPts(400, Y(300), 34 + ((t - 13.4) % 0.8) * 90, 0, TAU, 50), { w: 3, color: C.maroon, alpha: (1 - ((t - 13.4) % 0.8) / 0.8) * 0.9 });
   const ks = pop(t, 13.75, { stiffness: 380, damping: 16 });
@@ -518,7 +526,7 @@ function m5(ctx, t) {
 const NODE_A = [90, 1480], NODE_B = [990, 1460];
 function accents(ctx, t, IMG) {
   // opening: a single orange node at the footage edge with two arrows converging, then it rises into the panel
-  if (t < 1.4) {
+  if (false) {
     const k = pop(t, 0.15) * out(t, 1.05, 0.3);
     const N = [960, 1470];
     node(ctx, N[0], N[1], 11, k);
