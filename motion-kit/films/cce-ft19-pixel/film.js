@@ -30,13 +30,19 @@ function poly(b, pts, c) {   // rasterise a polygon on pixel centres (no anti-al
     if (inside) px(b, x, y, c);
   }
 }
-function toCanvas(b, outline = true) {   // a 1-pixel dark outline around every filled region
+function toCanvas(b, outline = true, rim = false) {   // a 1-pixel dark outline around every filled region (+ optional light rim outside it)
   const c = document.createElement('canvas'); c.width = b.w + 2; c.height = b.h + 2; const x = c.getContext('2d');
   const at = (i, j) => (i < 0 || j < 0 || i >= b.w || j >= b.h ? null : b.d[j * b.w + i]);
   for (let j = -1; j <= b.h; j++) for (let i = -1; i <= b.w; i++) {
     const v = at(i, j);
     if (v) { x.fillStyle = v; x.fillRect(i + 1, j + 1, 1, 1); }
     else if (outline && (at(i - 1, j) || at(i + 1, j) || at(i, j - 1) || at(i, j + 1))) { x.fillStyle = OUT; x.fillRect(i + 1, j + 1, 1, 1); }
+  }
+  if (rim) {   // a soft light rim one pixel outside the outline separates characters from busy furniture behind them
+    const d = x.getImageData(0, 0, c.width, c.height), a = (i, j) => (i < 0 || j < 0 || i >= c.width || j >= c.height ? 0 : d.data[(j * c.width + i) * 4 + 3]);
+    const C2 = document.createElement('canvas'); C2.width = c.width + 2; C2.height = c.height + 2; const x2 = C2.getContext('2d'); x2.fillStyle = 'rgba(255,255,255,0.42)';
+    for (let j = -1; j <= c.height; j++) for (let i = -1; i <= c.width; i++) if (!a(i, j) && (a(i - 1, j) || a(i + 1, j) || a(i, j - 1) || a(i, j + 1))) x2.fillRect(i + 1, j + 1, 1, 1);
+    x2.drawImage(c, 1, 1); return C2;
   }
   return c;
 }
@@ -153,7 +159,7 @@ function banner(ctx, s, cy, sc, t, a, b, col = '#FFFFFF') {   // in at a (pops d
 // ================================================================== sprites (built once)
 const SPR = {};
 function buildSprites() {
-  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk));
+  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk), true, true);
   SPR.case = toCanvas(briefcase()); SPR.cash = toCanvas(cashBrick()); SPR.bar = toCanvas(goldBar()); SPR.card = toCanvas(blackCard()); SPR.plane = toCanvas(plane());
   SPR.bubble = toCanvas(bubble(26, 16)); SPR.g0 = toCanvas(gull(0), false); SPR.g1 = toCanvas(gull(1), false); SPR.n0 = toCanvas(note(0)); SPR.n1 = toCanvas(note(1)); for (let i = 0; i < 3; i++) SPR['sp' + i] = toCanvas(sparkle(i / 3 + 0.1), false);
   for (let n = 1; n <= 9; n++) SPR['st' + n] = toCanvas(statement(n));
@@ -240,12 +246,12 @@ function drawPixels(ctx, t) {
   ambient(ctx, sc, t);
   // ---------------------------------------------------------------- penthouse: he strolls in, waves; "1,200"; picks up the case and heads out
   if (sc === 'penthouse') {
-    const w = walker(t, [[0.6, 214, 140], [1.75, 128, 180], [2.15, 128, 180], [2.7, 92, 198]]);
+    const w = walker(t, [[0.6, 232, 176], [1.75, 154, 174], [2.15, 154, 174], [2.7, 96, 200]]);
     const waving = t > 1.78 && t < 2.15;
-    if (t < 2.05) { const bob = t > 1.5 ? Math.max(0, Math.sin((t - 1.5) * 14)) * 2 * (1 - P(t, 1.5, 2.0)) : 0; spr(ctx, 'case', 119, 170 - bob); }
+    if (t < 2.05) { const bob = t > 1.5 ? Math.max(0, Math.sin((t - 1.5) * 14)) * 2 * (1 - P(t, 1.5, 2.0)) : 0; spr(ctx, 'case', 124, 136 - bob); }
     drawAvatar(ctx, w, waving ? (Math.floor(t * 7) % 2 ? 'wave0' : 'wave1') : t > 2.05 ? 'carry' : null, waving ? false : null);
     if (t > 2.05) spr(ctx, 'case', w.x + (w.flip ? -8 : 8), w.y - 3 - (Math.floor(t * 8) % 2), w.flip);
-    if (t > 1.0 && t < 2.0) for (let k = 0; k < 3; k++) { const ph = (t * 1.8 + k / 3) % 1; spr(ctx, 'sp' + Math.floor(ph * 3), 119 + [-6, 6, 0][k], 158 - ph * 14); }   // the case glitters
+    if (t > 1.0 && t < 2.0) for (let k = 0; k < 3; k++) { const ph = (t * 1.8 + k / 3) % 1; spr(ctx, 'sp' + Math.floor(ph * 3), 124 + [-6, 6, 0][k], 124 - ph * 14); }   // the case glitters
     banner(HX, '1,200', 30, 3, t, 0.95, 2.3);
   }
   // ---------------------------------------------------------------- vault
@@ -264,14 +270,14 @@ function drawPixels(ctx, t) {
     if (t > 2.7) banner(HX, cnt.toLocaleString('en-US'), 26, 3, t, 2.7, 5.0, cnt >= 15600 ? '#F2C14E' : '#FFFFFF');
     banner(HX, 'FREE CASH', 52, 2, t, 4.3, 5.1, '#9BD38A');
     noteRain(ctx, t, 4.3, 5.9, 130);
-    const w = walker(t, [[3.6, 172, 128], [4.55, 104, 163], [5.35, 104, 163], [6.0, 84, 173], [9.6, 84, 173]]);
+    const w = walker(t, [[3.6, 124, 110], [4.55, 104, 163], [5.35, 104, 163], [6.0, 92, 176], [9.6, 92, 176]]);
     const cheer = t > 4.55 && t < 5.35;
     drawAvatar(ctx, { ...w, y: w.y - (cheer ? Math.max(0, Math.sin((t - 4.55) * 12)) * 3 : 0) }, cheer ? 'up' : t > 9.6 ? 'carry' : null, cheer ? false : null);
     if (cheer) confetti(ctx, t, 4.55, w.x, w.y - 30);
     if (t > 6.6 && t < 9.7) {
       const lines = Math.max(1, Math.min(9, Math.ceil((t - 6.6) / 0.14))), wob = t < 7.9 ? (Math.floor(t * 14) % 2) : 0;
-      spr(ctx, 'st' + lines, 62 + wob, 128, false, 1 - P(t, 9.5, 9.7));
-      if (t > 8.6) { const k = P(t, 8.6, 8.95, E.outBack); spr(ctx, 'card', lerp(100, 66, k), lerp(110, 112, k) - Math.sin(Math.PI * clamp((t - 8.6) / 0.35)) * 12); if (t > 8.95 && t < 9.35) spr(ctx, 'sp' + Math.floor((t * 9) % 3), 72, 100); }
+      spr(ctx, 'st' + lines, 66 + wob, 114, false, 1 - P(t, 9.5, 9.7));
+      if (t > 8.6) { const k = P(t, 8.6, 8.95, E.outBack); spr(ctx, 'card', lerp(100, 70, k), lerp(98, 100, k) - Math.sin(Math.PI * clamp((t - 8.6) / 0.35)) * 12); if (t > 8.95 && t < 9.35) spr(ctx, 'sp' + Math.floor((t * 9) % 3), 76, 88); }
     }
     { const kk = [8.55, 9.55]; banner(HX, 'STATEMENT', 26, 2, t, kk[0], kk[1]); banner(HX, 'CREDIT', 50, 2, t, kk[0] + 0.1, kk[1], '#F2C14E'); }
     if (t > 9.6) spr(ctx, 'case', w.x + 8, w.y - 3 - (t > 9.75 && t < 10.3 ? Math.floor(t * 12) % 2 : 0));
@@ -294,7 +300,7 @@ function drawPixels(ctx, t) {
   // ---------------------------------------------------------------- villa
   if (sc === 'villa') {
     flock(ctx, t, 10, -1, 4);
-    const w = walker(t, [[14.3, 100, 194], [15.2, 140, 172], [END + 1, 140, 172]]);
+    const w = walker(t, [[14.3, 44, 152], [15.2, 106, 146], [END + 1, 106, 146]]);
     const cheer = t > 15.3;
     drawAvatar(ctx, { ...w, y: w.y - (cheer ? Math.max(0, Math.sin((t - 15.3) * 9)) * 3 : 0) }, cheer ? 'up' : null, cheer ? false : null);
     if (cheer) confetti(ctx, t, 15.8, w.x, w.y - 32);
@@ -307,10 +313,10 @@ function drawPixels(ctx, t) {
 // camera: eased keys per scene [t, cx, cy, zoom] (art px; zoom = screen px per art px); push-in before each cut,
 // pull-out after it, and a slow drift so the frame is never still
 const CAMK = [
-  [0.0, 150, 120, 5.0], [0.8, 150, 120, 5.0], [1.8, 130, 150, 6.4], [2.5, 112, 170, 7.4],
+  [0.0, 150, 120, 5.0], [0.8, 150, 120, 5.0], [1.8, 140, 140, 6.0], [2.5, 112, 165, 7.4],
   [2.5, 140, 150, 7.6], [3.3, 138, 135, 5.6], [4.6, 118, 122, 6.0], [5.6, 108, 128, 5.2], [6.7, 74, 130, 7.4], [8.7, 72, 122, 8.2], [9.7, 86, 150, 6.6], [10.4, 96, 140, 7.4], [11.35, 96, 140, 8.4],
   [11.35, 112, 140, 6.2], [12.3, 110, 140, 5.2], [13.6, 88, 150, 7.0], [14.35, 84, 150, 8.0],
-  [14.35, 118, 140, 6.0], [15.2, 122, 135, 5.2], [16.4, 134, 128, 5.8], [17.3, 134, 128, 6.0],
+  [14.35, 100, 130, 6.0], [15.2, 108, 118, 5.2], [16.4, 108, 112, 5.8], [17.3, 108, 112, 6.0],
 ];
 function camAt(t) {
   let i = 0; while (i < CAMK.length - 1 && t >= CAMK[i + 1][0]) i++;

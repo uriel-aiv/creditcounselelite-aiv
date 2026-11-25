@@ -185,6 +185,13 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - **Busboy story:** the busboy becomes the boss through the mosaic cut on "today".
     - **Building a new clip:** write a scene file (rooms, cuts, `drawPixels`, camera keys, `FH_KEYS`, hits) and run `python3 motion-kit/tools/pixel/build.py films/<new-film> <scene.js + common_tail.js> "<title>"` from the repo root; the engine stays in `cce-ft19-pixel`.
     - **Motion-only (full-height) moments:** the zoom is raised automatically so the room fills the frame. The camera may look above the room's top edge to leave headroom for banners. VSL claims use "up to / as low as", with the disclaimer shown from the first claim to the end.
+  - **Object separation (round 3 feedback: "characters going over objects"):**
+    - characters only stand and walk on open floor, with a small gap from furniture;
+    - no one stands on tables, sofas, booths or loungers;
+    - props sit on the surfaces they belong to (the case on the coffee table, the statement on the desk).
+    - **Checking positions:** run `python3 motion-kit/tools/pixel/waypoints.py <room> '[[x,y],...]' out.png`, which draws each character's footprint box over a gridded room.
+    - **Rule of thumb:** a character's 22x44 box may sit in front of furniture (feet lower than the object's base), but its feet never land inside a piece of furniture.
+    - **Separation from busy backgrounds:** characters have a soft one-pixel light rim outside their dark outline. Crowds are laid out in rows on the open floor only.
   - **Keep in mind:**
     - banners auto-shrink to fit the 180-px window;
     - walking paths must keep the avatar's head inside the window;

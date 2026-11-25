@@ -26,13 +26,19 @@ function poly(b, pts, c) {   // rasterise a polygon on pixel centres (no anti-al
     if (inside) px(b, x, y, c);
   }
 }
-function toCanvas(b, outline = true) {   // a 1-pixel dark outline around every filled region
+function toCanvas(b, outline = true, rim = false) {   // a 1-pixel dark outline around every filled region (+ optional light rim outside it)
   const c = document.createElement('canvas'); c.width = b.w + 2; c.height = b.h + 2; const x = c.getContext('2d');
   const at = (i, j) => (i < 0 || j < 0 || i >= b.w || j >= b.h ? null : b.d[j * b.w + i]);
   for (let j = -1; j <= b.h; j++) for (let i = -1; i <= b.w; i++) {
     const v = at(i, j);
     if (v) { x.fillStyle = v; x.fillRect(i + 1, j + 1, 1, 1); }
     else if (outline && (at(i - 1, j) || at(i + 1, j) || at(i, j - 1) || at(i, j + 1))) { x.fillStyle = OUT; x.fillRect(i + 1, j + 1, 1, 1); }
+  }
+  if (rim) {   // a soft light rim one pixel outside the outline separates characters from busy furniture behind them
+    const d = x.getImageData(0, 0, c.width, c.height), a = (i, j) => (i < 0 || j < 0 || i >= c.width || j >= c.height ? 0 : d.data[(j * c.width + i) * 4 + 3]);
+    const C2 = document.createElement('canvas'); C2.width = c.width + 2; C2.height = c.height + 2; const x2 = C2.getContext('2d'); x2.fillStyle = 'rgba(255,255,255,0.42)';
+    for (let j = -1; j <= c.height; j++) for (let i = -1; i <= c.width; i++) if (!a(i, j) && (a(i - 1, j) || a(i + 1, j) || a(i, j - 1) || a(i, j + 1))) x2.fillRect(i + 1, j + 1, 1, 1);
+    x2.drawImage(c, 1, 1); return C2;
   }
   return c;
 }
@@ -149,7 +155,7 @@ function banner(ctx, s, cy, sc, t, a, b, col = '#FFFFFF') {   // in at a (pops d
 // ================================================================== sprites (built once)
 const SPR = {};
 function buildSprites() {
-  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk));
+  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk), true, true);
   SPR.case = toCanvas(briefcase()); SPR.cash = toCanvas(cashBrick()); SPR.bar = toCanvas(goldBar()); SPR.card = toCanvas(blackCard()); SPR.plane = toCanvas(plane());
   buildExtras(); SPR.bubble = toCanvas(bubble(26, 16)); SPR.g0 = toCanvas(gull(0), false); SPR.g1 = toCanvas(gull(1), false); SPR.n0 = toCanvas(note(0)); SPR.n1 = toCanvas(note(1)); for (let i = 0; i < 3; i++) SPR['sp' + i] = toCanvas(sparkle(i / 3 + 0.1), false);
   for (let n = 1; n <= 9; n++) SPR['st' + n] = toCanvas(statement(n));
@@ -272,18 +278,19 @@ const DISC = [9.6];
 const MON = [151, 100];
 function scene(t) { return t < T.city ? 'diner' : t < T.vault ? 'city' : t < T.pent ? 'vault' : t < T.office ? 'penthouse' : t < T.air ? 'office' : 'airfield'; }
 const LOOKN = ['friend1', 'friend2', 'dad', 'mom', 'busboy', 'av'];
-const CROWD = []; for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) if (!(i === 2 && j === 2)) CROWD.push([110 + (i - j) * 16, 135 + (i + j) * 8, LOOKN[(i * 5 + j * 3) % 6], 18.55 + hash01(i * 5 + j, 21) * 1.6]);
+// members stand on the open marble floor only (rows in front of the sofa, table and bar), never on furniture
+const CROWD = []; [[160, [38, 58, 78, 98, 122, 142, 162, 182]], [174, [56, 76, 96, 126, 146, 166]], [188, [72, 92, 128, 148]], [202, [94, 116, 136]]].forEach(([y, xs], ri) => xs.forEach((x, k) => CROWD.push([x + (ri % 2) * 3, y, LOOKN[(ri * 3 + k) % 6], 18.55 + hash01(ri * 9 + k, 21) * 1.6])));
 const PINS = [[48, 76], [104, 52], [160, 84], [188, 118], [24, 120]];
 function drawPixels(ctx, t) {
   ctx.clearRect(0, 0, G, G); HX.clearRect(0, 0, VW, VW);
   const sc = scene(t); ctx.drawImage(BG[sc], 0, 0); ambient(ctx, sc, t);
   if (sc === 'diner') {
     // the busboy scrubs a table; two diners walk past without a look; he thinks of the playbook he never got
-    const w = walker(t, [[0, 150, 158], [8.75, 150, 158], [9.5, 196, 182]]);
+    const w = walker(t, [[0, 144, 160], [8.75, 144, 160], [9.5, 104, 196]]);
     const scrub = (t > 0.3 && t < 2.6) || (t > 4.8 && t < 6.3);
     cast(ctx, [{ w, who: 'busboy', arms: scrub ? (Math.floor(t * 6) % 2 ? 'scrub0' : 'scrub1') : null, flip: scrub ? false : null },
-      t > 4.7 && t < 7.0 ? { w: walker(t, [[4.7, 30, 196], [7.0, 214, 196]]), who: 'av' } : null,
-      t > 5.2 && t < 7.4 ? { w: walker(t, [[5.2, 216, 128], [7.4, 40, 128]]), who: 'friend2' } : null]);
+      t < 6.4 ? popIn(ctx, t, 4.85, 110, 126, 'av', t > 5.6) : null, t < 6.5 ? popIn(ctx, t, 5.05, 128, 134, 'friend2', t > 5.7) : null]);
+    for (const [tx, x, y] of [[6.4, 110, 126], [6.5, 128, 134]]) if (t > tx && t < tx + 0.3) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tx) / 0.1)), x, y - 18);
     if (scrub) for (let k = 0; k < 3; k++) { const ph = (t * 2.4 + k / 3) % 1; ctx.fillStyle = '#FFFFFF'; ctx.globalAlpha = 1 - ph; ctx.fillRect(r(w.x + 14 + k * 3), r(w.y - 18 - ph * 10), 2, 2); ctx.globalAlpha = 1; }   // soap bubbles
     iconBubble(ctx, w.x - 18, w.y - 44, clamp(spring(t - 2.7, { stiffness: 400, damping: 16 })) * (t < 4.5 ? 1 : 0), (x, y) => spr(ctx, 'wallet', x, y + 5));
     if (t > 3.2 && t < 4.5) { pixText(ctx, '0', w.x - 12, w.y - 63, 1, '#D6342B'); }
@@ -305,7 +312,7 @@ function drawPixels(ctx, t) {
   }
   if (sc === 'vault') {
     // "cash flow 50,000 a month": a brick drops for each month tick of the clock
-    const w = walker(t, [[14.9, 96, 176], [END, 96, 176]]);
+    const w = walker(t, [[14.9, 96, 178], [END, 96, 178]]);
     for (let i = 0; i < 12; i++) { const tl = 15.45 + i * 0.13; if (t < tl - 0.2) continue; const row = i < 5 ? 0 : i < 9 ? 1 : i < 11 ? 2 : 3, col = i < 5 ? i : i < 9 ? i - 5 : i < 11 ? i - 9 : 0; let x = 118 + col * 8 + row * 4, y = 178 - row * 4; const fk = clamp((tl - t) / 0.2); y -= fk * fk * 60; spr(ctx, 'cash', x, y + 4); }
     cast(ctx, [{ w, who: 'av', arms: t > 16.0 ? 'up' : null, flip: false }]);
     if (t > 16.05) confetti(ctx, t, 16.1, w.x, w.y - 30);
@@ -313,7 +320,7 @@ function drawPixels(ctx, t) {
   }
   if (sc === 'penthouse') {
     // "since 2017, over 4,000 members": the room fills up, member by member
-    const list = [{ w: { x: 110, y: 167, legs: 0, arms: 'down', flip: false }, who: 'av', arms: t > 19.3 ? (Math.floor(t * 7) % 2 ? 'wave0' : 'wave1') : null }];
+    const list = [{ w: { x: 111, y: 186, legs: 0, arms: 'down', flip: false }, who: 'av', arms: t > 19.3 ? (Math.floor(t * 7) % 2 ? 'wave0' : 'wave1') : null }];
     for (const [x, y, who, t0] of CROWD) { const c = popIn(ctx, t, t0, x, y, who, x > 110); if (c) list.push(c); }
     cast(ctx, list);
     const n = Math.round(4000 * P(t, 19.2, 20.35, (x) => x) / 50) * 50;
@@ -322,7 +329,7 @@ function drawPixels(ctx, t) {
   }
   if (sc === 'office') {
     // "up to 500,000 … as low as 0% … without documentation": cards fan out of the screen; the paperwork blows away
-    const w = walker(t, [[20.6, 196, 196], [21.6, 118, 156], [END, 118, 156]]);
+    const w = walker(t, [[20.6, 222, 204], [21.6, 150, 186], [END, 150, 186]]);
     cast(ctx, [{ w, who: 'av', arms: t > 23.5 && t < 25.2 ? 'up' : t > 21.8 ? 'carry' : null, flip: t > 21.6 ? false : null }]);
     for (let j = 0; j < 5; j++) { const tj = 21.85 + j * 0.2; if (t < tj) continue; const e = E.outBack(clamp((t - tj) / 0.35)), tx = 70 + j * 18, ty = 118 - Math.abs(j - 2) * 4; spr(ctx, 'card', lerp(MON[0], tx, e), lerp(MON[1], ty, e) - Math.sin(Math.PI * clamp((t - tj) / 0.35)) * 10, false, 1 - P(t, 26.6, 26.9)); }
     for (let d = 0; d < 6; d++) { const tb = 25.4 + d * 0.06; let x = 168 + (d % 2) * 3, y = 126 - d * 3; if (t > tb) { const k = t - tb; x += k * 140; y -= k * 60 - k * k * 40; } if (x < G + 20) spr(ctx, 'st3', x, y, false, t > tb ? clamp(1 - (t - tb) * 1.2) : 1); }
@@ -346,7 +353,7 @@ const CAMK = [
   [9.45, 110, 150, 9], [10.3, 104, 130, 5.4], [12.6, 104, 140, 6.0], [14.9, 104, 160, 7.4],
   [14.9, 120, 140, 7.0], [15.8, 122, 135, 5.6], [17.45, 110, 150, 7.4],
   [17.45, 110, 150, 7.0], [18.45, 110, 160, 6.0], [20.6, 110, 160, 7.5],
-  [20.6, 140, 120, 9], [22.5, 120, 115, 9], [24.45, 120, 100, 5.4], [26.95, 120, 110, 7],
+  [20.6, 150, 130, 9], [22.5, 130, 125, 9], [24.45, 128, 115, 5.4], [26.95, 128, 120, 7],
   [26.95, 110, 150, 7], [27.3, 100, 160, 9], [31.4, 86, 160, 9],
 ];
 const END = 31.39; window.__END = END;

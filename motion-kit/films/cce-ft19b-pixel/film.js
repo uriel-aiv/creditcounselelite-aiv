@@ -26,13 +26,19 @@ function poly(b, pts, c) {   // rasterise a polygon on pixel centres (no anti-al
     if (inside) px(b, x, y, c);
   }
 }
-function toCanvas(b, outline = true) {   // a 1-pixel dark outline around every filled region
+function toCanvas(b, outline = true, rim = false) {   // a 1-pixel dark outline around every filled region (+ optional light rim outside it)
   const c = document.createElement('canvas'); c.width = b.w + 2; c.height = b.h + 2; const x = c.getContext('2d');
   const at = (i, j) => (i < 0 || j < 0 || i >= b.w || j >= b.h ? null : b.d[j * b.w + i]);
   for (let j = -1; j <= b.h; j++) for (let i = -1; i <= b.w; i++) {
     const v = at(i, j);
     if (v) { x.fillStyle = v; x.fillRect(i + 1, j + 1, 1, 1); }
     else if (outline && (at(i - 1, j) || at(i + 1, j) || at(i, j - 1) || at(i, j + 1))) { x.fillStyle = OUT; x.fillRect(i + 1, j + 1, 1, 1); }
+  }
+  if (rim) {   // a soft light rim one pixel outside the outline separates characters from busy furniture behind them
+    const d = x.getImageData(0, 0, c.width, c.height), a = (i, j) => (i < 0 || j < 0 || i >= c.width || j >= c.height ? 0 : d.data[(j * c.width + i) * 4 + 3]);
+    const C2 = document.createElement('canvas'); C2.width = c.width + 2; C2.height = c.height + 2; const x2 = C2.getContext('2d'); x2.fillStyle = 'rgba(255,255,255,0.42)';
+    for (let j = -1; j <= c.height; j++) for (let i = -1; i <= c.width; i++) if (!a(i, j) && (a(i - 1, j) || a(i + 1, j) || a(i, j - 1) || a(i, j + 1))) x2.fillRect(i + 1, j + 1, 1, 1);
+    x2.drawImage(c, 1, 1); return C2;
   }
   return c;
 }
@@ -149,7 +155,7 @@ function banner(ctx, s, cy, sc, t, a, b, col = '#FFFFFF') {   // in at a (pops d
 // ================================================================== sprites (built once)
 const SPR = {};
 function buildSprites() {
-  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk));
+  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk), true, true);
   SPR.case = toCanvas(briefcase()); SPR.cash = toCanvas(cashBrick()); SPR.bar = toCanvas(goldBar()); SPR.card = toCanvas(blackCard()); SPR.plane = toCanvas(plane());
   buildExtras(); SPR.bubble = toCanvas(bubble(26, 16)); SPR.g0 = toCanvas(gull(0), false); SPR.g1 = toCanvas(gull(1), false); SPR.n0 = toCanvas(note(0)); SPR.n1 = toCanvas(note(1)); for (let i = 0; i < 3; i++) SPR['sp' + i] = toCanvas(sparkle(i / 3 + 0.1), false);
   for (let n = 1; n <= 9; n++) SPR['st' + n] = toCanvas(statement(n));
@@ -284,7 +290,7 @@ function drawPixels(ctx, t) {
       const tf = i < 5 ? t0 + 0.28 : 16.35; if (t > tf && t < tf + 0.36) { const [cx, cy] = boxCenter(i); spr(ctx, 'sp' + Math.min(2, Math.floor((t - tf) / 0.12)), cx, cy + 4); }
     }
     if (t < T.off2 - 0.5) {
-      const w = walker(t, [[0.8, 214, 190], [1.95, 104, 142], [7.4, 104, 142], [8.0, 118, 156], [10.2, 118, 156]]);
+      const w = walker(t, [[0.8, 222, 196], [1.95, 95, 150], [7.4, 95, 150], [8.0, 98, 156], [10.2, 98, 156]]);
       const point = t > 3.2 && t < 5.9;
       cast(ctx, [{ w, who: 'friend1', arms: point ? 'point' : null, flip: point ? false : null }]);
       if (t > 8.35) { const k1 = clamp(spring(t - 8.35, { stiffness: 380, damping: 15 })); spr(ctx, 'card', w.x, w.y - 50 + (1 - k1) * 6, false, clamp(k1 * 2));
@@ -294,7 +300,7 @@ function drawPixels(ctx, t) {
       banner(HX, 'MID-LOW 700S', 22, 2, t, 4.1, 5.9);
       banner(HX, 'AUTHORIZED', 26, 3, t, 8.4, 9.95); banner(HX, 'USERS', 52, 3, t, 8.55, 9.95, '#F2C14E');
     } else {
-      const w = walker(t, [[12.95, 214, 200], [13.9, 132, 168], [END + 1, 132, 168]]);
+      const w = walker(t, [[12.95, 222, 204], [13.9, 150, 186], [END + 1, 150, 186]]);
       const got = t > 15.45, cheer = t > 16.35;
       cast(ctx, [{ w, who: 'friend1', arms: cheer ? 'up' : got ? 'carry' : null, flip: cheer || got ? false : null }]);
       for (let j = 0; j < 3; j++) { const tj = 14.4 + j * 0.3; if (t > tj && t < tj + 0.5) { const k = clamp((t - tj) / 0.5), e = E.inOutSine(k); spr(ctx, 'card', lerp(MON[0], w.x + 10, e), lerp(MON[1], w.y - 26, e) - Math.sin(Math.PI * e) * 22); } }
@@ -305,22 +311,22 @@ function drawPixels(ctx, t) {
     }
   }
   if (sc === 'living') {
-    const dad = { x: 60, y: 168, legs: 0, arms: 'down', flip: false }, mom = { x: 80, y: 178, legs: 0, arms: 'down', flip: false };
-    const you = walker(t, [[10.0, 210, 190], [10.85, 120, 176], [END, 120, 176]]);
-    const f2 = walker(t, [[12.05, 216, 210], [12.75, 152, 194], [END, 152, 194]]), bs = walker(t, [[12.45, 216, 182], [13.0, 168, 178], [END, 168, 178]]);
+    const dad = { x: 40, y: 176, legs: 0, arms: 'down', flip: false }, mom = { x: 58, y: 190, legs: 0, arms: 'down', flip: false };
+    const you = walker(t, [[10.0, 222, 196], [10.85, 150, 182], [END, 150, 182]]);
+    const f2 = walker(t, [[12.05, 222, 216], [12.75, 178, 200], [END, 178, 200]]), bs = walker(t, [[12.45, 224, 184], [13.0, 194, 178], [END, 194, 178]]);
     const waveD = t > 10.85 && t < 11.3;
     cast(ctx, [{ w: dad, who: 'dad', arms: waveD ? (Math.floor(t * 7) % 2 ? 'wave0' : 'wave1') : t > 11.3 ? 'down' : 'down' }, { w: mom, who: 'mom', arms: t > 11.0 && t < 11.6 ? 'wave1' : 'down' },
       { w: you, who: 'friend1', arms: t > 11.6 ? 'carry' : null, flip: t > 10.85 ? true : null }, t > 12.05 ? { w: f2, who: 'friend2', flip: t > 12.75 ? true : null } : null, t > 12.45 ? { w: bs, who: 'av' } : null]);
-    cardArc(ctx, t, 11.15, 0.45, [68, 146], [112, 150]); cardArc(ctx, t, 12.75, 0.3, [146, 168], [118, 150], 10);
-    for (const tt of [11.6, 13.05]) if (t > tt && t < tt + 0.36) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tt) / 0.12)), 118, 140);
+    cardArc(ctx, t, 11.15, 0.45, [50, 150], [144, 156], 24); cardArc(ctx, t, 12.75, 0.3, [172, 172], [152, 156], 10);
+    for (const tt of [11.6, 13.05]) if (t > tt && t < tt + 0.36) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tt) / 0.12)), 150, 142);
     banner(HX, 'PARENTS', 30, 3, t, 10.9, 12.1);
     banner(HX, 'FRIENDS', 26, 3, t, 12.2, 12.95); banner(HX, 'FAMILY', 52, 3, t, 12.6, 12.95, '#F2C14E');
   }
 }
 const CAMK = [
-  [0.0, 150, 70, 5.2], [0.9, 150, 70, 5.2], [1.3, 152, 68, 5.4], [3.3, 158, 70, 5.5], [5.9, 150, 72, 5.3], [7.3, 128, 95, 5.6], [8.4, 118, 108, 6.2], [10.05, 118, 120, 7.4],
-  [10.05, 120, 150, 7.4], [10.8, 104, 145, 5.6], [12.0, 112, 150, 6.0], [12.7, 130, 150, 5.4], [13.0, 140, 160, 7.0],
-  [13.0, 150, 135, 7.0], [13.8, 145, 120, 5.8], [15.3, 145, 118, 6.2], [16.2, 160, 110, 5.8], [16.8, 160, 110, 6.0],
+  [0.0, 150, 70, 5.2], [0.9, 150, 70, 5.2], [1.3, 152, 68, 5.4], [3.3, 158, 70, 5.5], [5.9, 150, 72, 5.3], [7.3, 118, 95, 5.6], [8.4, 105, 108, 6.2], [10.05, 105, 120, 7.4],
+  [10.05, 140, 150, 7.4], [10.8, 108, 150, 5.6], [12.0, 112, 152, 6.0], [12.7, 128, 155, 5.4], [13.0, 150, 160, 7.0],
+  [13.0, 160, 140, 7.0], [13.8, 150, 128, 5.8], [15.3, 150, 126, 6.0], [16.2, 160, 118, 5.8], [16.8, 160, 118, 6.0],
 ];
 const END = 16.73; window.__END = END;
 const FH_KEYS = [[0, 1920], [0.9, SEAM], [6.0, 1920], [7.3, SEAM], [END, 0]];
