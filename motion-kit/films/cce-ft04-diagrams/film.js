@@ -693,7 +693,7 @@ function d1(ctx, t) {
     const tb = out(t, 2.9);
     [[292, Y(372), 10, 0.95], [330, Y(338), 16, 1.02]].forEach(([bx, by, r, t0]) => { const kb = clamp(sp(t, t0, SPRING.bouncy)) * tb; if (kb > 0.01) stroke(ctx, arcPts(bx, by + sway, r * kb, r * kb, 0, TAU, 20), { w: 5, seed: 22 + r }); });
     thought(ctx, 560, Y(380), 1.45 * clamp(P(t, 1.05, 1.45, E.outBack)) * tb, 21);
-    txt(ctx, '?', 560, Y(418) + bob(t, 1, 6, 0.8), 120, DISPLAY, C.blue, { align: 'center', p: P(t, 1.25, 1.35) * out(t, 2.85) });
+    txt(ctx, '?', 560, Y(418) + bob(t, 1, 6, 0.8), 120, DISPLAY, C.blue, { align: 'center', p: P(t, 1.25, 1.35) * (t < 2.78 ? 1 : 0) });
   });
   // "out there": a magnifier sweeps right and finds the 0% card
   const sw = P(t, 2.85, 3.6, E.inOutCubic), mx = lerp(560, 760, sw), my = Y(lerp(380, 470, sw)) + Math.sin(Math.PI * sw) * -60;
@@ -704,8 +704,8 @@ function d1(ctx, t) {
     grp(ctx, kc, 760, Y(470), () => { card(ctx, 760, Y(470), 250, 160, -0.08 + 0.04 * Math.sin(t * 2), C.ink); txt(ctx, '0%', 790, Y(500), 70, DISPLAY, C.white, { align: 'center' }); });
   }
   txt(ctx, 'POSSIBLE', 760, Y(740), 70, DISPLAY, C.blue, { align: 'center', p: P(t, 4.5, 4.8) * out(t, 5.05) });
-  txt(ctx, 'LACK OF KNOWLEDGE', 540, Y(150), 84, DISPLAY, C.ink, { align: 'center', p: P(t, 0.4, 1.0) * out(t, 2.75) });
-  txt(ctx, "IF PEOPLE KNEW IT'S OUT THERE", 540, Y(150), 70, DISPLAY, C.ink, { align: 'center', p: P(t, 2.8, 3.4) * out(t, 5.0) });
+  txt(ctx, 'LACK OF KNOWLEDGE', 540, Y(150), 84, DISPLAY, C.ink, { align: 'center', p: t < 2.6 ? P(t, 0.4, 1.0) : 1 - P(t, 2.6, 2.85, (x) => x) });
+  if (t > 2.86) txt(ctx, "IF PEOPLE KNEW IT'S OUT THERE", 540, Y(150), 70, DISPLAY, C.ink, { align: 'center', p: t < 4.8 ? P(t, 2.88, 3.4) : 1 - P(t, 4.8, 5.05, (x) => x) });
 }
 // D2 (5.2-8.65): credit wasn't taught in school, and wasn't talked about at home
 function chalkboard(ctx, x, y, t, t0) {
@@ -735,7 +735,7 @@ function d2(ctx, t) {
     const kb = P(t, 7.45, 7.7, E.outBack);
     grp(ctx, kb, 800, Y(330), () => { ctx.save(); ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.ellipse(800, Y(330), 150, 75, 0, 0, TAU); ctx.fill(); ctx.restore(); stroke(ctx, [...arcPts(800, Y(330), 150, 75, 0, TAU, 50)], { w: 6, seed: 91 }); stroke(ctx, [[760, Y(398)], [735, Y(450)], [800, Y(404)]], { w: 6, seed: 92 }); txt(ctx, 'CREDIT?', 800, Y(352), 64, DISPLAY, C.ink, { align: 'center' }); });
   });
-  txt(ctx, 'HOME', 800, Y(760), 60, DISPLAY, C.ink, { align: 'center', p: P(t, 7.55, 7.85) });
+  txt(ctx, 'HOME', 800, Y(810), 60, DISPLAY, C.ink, { align: 'center', p: P(t, 7.55, 7.85) });
   cross(ctx, 800, Y(330), 90, P(t, 7.9, 8.25, E.outCubic), 101);
 }
 // ------------------------------------------------------------------ captions

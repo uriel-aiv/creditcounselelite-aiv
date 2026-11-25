@@ -772,8 +772,8 @@ function r1(ctx, t) {
     const val = lerp(560, 805, P(t, 2.55, 3.25, E.outBack));
     gauge(ctx, 400, Y(640), 230, val, P(t, 1.2, 2.2, E.inOutSine), 300);
     const kn = clamp(sp(t, 3.25, SPRING.bouncy));
-    burst(ctx, 400, Y(500), 110, kn * out(t, 4.6), 7, C.blue, 13, 0.4 * t);
-    if (t > 2.55) txt(ctx, String(Math.round(val / 5) * 5 > 800 ? 800 : Math.round(val / 5) * 5), 400, Y(530), 92, DISPLAY, t > 3.25 ? C.white : C.ink, { align: 'center' });
+    burst(ctx, 400, Y(300), 100, kn * out(t, 4.6), 7, C.blue, 13, 0.4 * t);
+    if (t > 2.55) txt(ctx, String(Math.round(val / 5) * 5 > 800 ? 800 : Math.round(val / 5) * 5), 400, Y(330), 84, DISPLAY, t > 3.25 ? C.white : C.ink, { align: 'center' });
     calendarIcon(ctx, 800, Y(560), 1.0, t, 3.4, '30');
     txt(ctx, 'DAYS', 800, Y(760), 64, DISPLAY, C.ink, { align: 'center', p: P(t, 3.7, 4.0) });
   });
@@ -787,7 +787,7 @@ function wrench(ctx, x, y, s, rot) {
   ctx.fillStyle = C.paper; ctx.fillRect(-16 * s, -50 * s, 32 * s, 46 * s); ctx.restore();
 }
 function r2(ctx, t) {
-  if (t < 5.2 || t > 7.5) return; const k = clamp(sp(t, 5.3, SPRING.bouncy)) * out(t, 7.15);
+  if (t < 5.2 || t > 7.5) return; const k = clamp(sp(t, 5.3, SPRING.bouncy)) * out(t, 6.95);
   grp(ctx, k, 540, Y(520), () => {
     txt(ctx, 'STEP 1: FIX', 540, Y(150), 100, DISPLAY, C.ink, { align: 'center' });
     // the bolt: a hexagon on a plate
@@ -814,7 +814,7 @@ function boxIcon(ctx, i, x, y, t) {
   } else if (i === 2) {   // derogatory: a document stamped COLLECTION, then CHARGE-OFF
     const k = clamp(sp(t, 15.2, SPRING.bouncy)); if (k <= 0.01) return;
     grp(ctx, k, x - 100, y, () => { ctx.save(); ctx.fillStyle = C.white; rrect(ctx, x - 150, y - 60, 100, 124, 6); ctx.fill(); ctx.restore(); stroke(ctx, [[x - 150, y - 60], [x - 50, y - 60], [x - 50, y + 64], [x - 150, y + 64], [x - 150, y - 60]], { w: 4, seed: 210 }); for (let l = 0; l < 4; l++) stroke(ctx, [[x - 134, y - 34 + l * 24], [x - 66 - (l % 2) * 20, y - 34 + l * 24]], { w: 4, seed: 211 + l }); });
-    [[16.3, 'COLLECTION', -40, -0.14], [17.1, 'CHARGE-OFF', 30, 0.1]].forEach(([ts, w, dy, r]) => { const ks = pop(t, ts); if (ks <= 0.01) return; const sc = lerp(1.6, 1, clamp(ks)); ctx.save(); ctx.translate(x - 100, y + dy); ctx.rotate(r); ctx.scale(sc, sc); ctx.globalAlpha = clamp(ks * 2); ctx.strokeStyle = C.maroon; ctx.lineWidth = 4; ctx.strokeRect(-72, -17, 144, 34); ctx.restore(); ctx.save(); ctx.translate(x - 100, y + dy); ctx.rotate(r); ctx.scale(sc, sc); ctx.globalAlpha = clamp(ks * 2); txt(ctx, w, 0, 10, 26, DISPLAY, C.maroon, { align: 'center' }); ctx.restore(); });
+    [[16.3, 'COLLECTION', -40, -0.14], [17.1, 'CHARGE-OFF', 30, 0.1]].forEach(([ts, w, dy, r]) => { const ks = pop(t, ts); if (ks <= 0.01) return; const sc = lerp(1.6, 0.82, clamp(ks)); ctx.save(); ctx.translate(x - 100, y + dy); ctx.rotate(r); ctx.scale(sc, sc); ctx.globalAlpha = clamp(ks * 2); ctx.strokeStyle = C.maroon; ctx.lineWidth = 4; ctx.strokeRect(-72, -17, 144, 34); ctx.restore(); ctx.save(); ctx.translate(x - 100, y + dy); ctx.rotate(r); ctx.scale(sc, sc); ctx.globalAlpha = clamp(ks * 2); txt(ctx, w, 0, 10, 26, DISPLAY, C.maroon, { align: 'center' }); ctx.restore(); });
   } else if (i === 4) {   // hard inquiries: a magnifier sweeps over an application
     const k = clamp(sp(t, 18.3, SPRING.bouncy)); if (k <= 0.01) return;
     grp(ctx, k, x - 90, y, () => { ctx.save(); ctx.fillStyle = C.white; rrect(ctx, x - 150, y - 60, 100, 124, 6); ctx.fill(); ctx.restore(); stroke(ctx, [[x - 150, y - 60], [x - 50, y - 60], [x - 50, y + 64], [x - 150, y + 64], [x - 150, y - 60]], { w: 4, seed: 220 }); for (let l = 0; l < 4; l++) stroke(ctx, [[x - 134, y - 34 + l * 24], [x - 70, y - 34 + l * 24]], { w: 4, seed: 221 + l }); });
@@ -826,7 +826,7 @@ const BOXLBL = ['PAYMENT\nHISTORY', '', 'DEROGATORY\nACCOUNTS', '', 'HARD\nINQUI
 const BOXT = [13.4, 0, 15.2, 0, 18.7, 0];
 function r3(ctx, t) {
   if (t < 7.1) return;
-  const ks = clamp(sp(t, 7.25, SPRING.bouncy)), fx = P(t, 9.9, 10.4);
+  const ks = clamp(sp(t, 7.4, SPRING.bouncy)), fx = P(t, 9.9, 10.4);
   txt(ctx, '6 BOXES = YOUR PROFILE', 540, Y(150), 84, DISPLAY, C.ink, { align: 'center', p: P(t, 7.4, 8.0) * (1 - P(t, 9.8, 9.9)) });
   txt(ctx, '3 ARE FIX-RELATED', 540, Y(150), 92, DISPLAY, C.blue, { align: 'center', p: P(t, 9.95, 10.5) });
   grp(ctx, ks, 540, Y(590), () => {
@@ -839,7 +839,7 @@ function r3(ctx, t) {
       stroke(ctx, [[x - 180, y - 85], [x + 180, y - 85], [x + 180, y + 85], [x - 180, y + 85], [x - 180, y - 85]], { w: fix && fx > 0 ? lerp(5, 10, fx) : 5, color: fix && fx > 0.5 ? C.blue : C.ink, p: kb, seed: 190 + i, dash: !fix && fx > 0.5 ? [14, 12] : null });
       txt(ctx, String(i + 1), x - 160, y - 50, 34, DISPLAY, fix && fx > 0.5 ? C.blue : C.ink, { p: kb });
       ctx.restore();
-      if (fix) { boxIcon(ctx, i, x, y, t); const lb = BOXLBL[i].split('\n'); lb.forEach((l, j) => txt(ctx, l, x + 40, y - 6 + j * 40, 38, DISPLAY, C.ink, { p: P(t, BOXT[i], BOXT[i] + 0.4) })); }
+      if (fix) { boxIcon(ctx, i, x, y, t); const lb = BOXLBL[i].split('\n'); lb.forEach((l, j) => txt(ctx, l, x + 22, y - 6 + j * 36, 32, DISPLAY, C.ink, { p: P(t, BOXT[i], BOXT[i] + 0.4) })); }
     });
   });
   disclaim(ctx, P(t, 12.0, 12.2));
