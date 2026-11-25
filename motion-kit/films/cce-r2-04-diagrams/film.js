@@ -770,9 +770,9 @@ function r1(ctx, t) {
   grp(ctx, o, 540, Y(520), () => {
     txt(ctx, 'THE 800 CLUB', 540, Y(150), 100, DISPLAY, C.ink, { align: 'center', p: P(t, 2.0, 2.5) });
     const val = lerp(560, 805, P(t, 2.55, 3.25, E.outBack));
-    gauge(ctx, 360, Y(660), 265, val, P(t, 1.2, 2.2, E.inOutSine), 300);
+    gauge(ctx, 360, Y(660), 265, val, P(t, 0.95, 1.9, E.inOutSine), 300);
     const kn = clamp(sp(t, 3.25, SPRING.bouncy));
-    burst(ctx, 360, Y(290), 115, kn * out(t, 4.6), 7, C.blue, 13, 0.4 * t);
+    burst(ctx, 360, Y(290), 115, kn, 7, C.blue, 13, 0.4 * t);
     if (t > 2.55) txt(ctx, String(Math.round(val / 5) * 5 > 800 ? 800 : Math.round(val / 5) * 5), 360, Y(320), 96, DISPLAY, t > 3.25 ? C.white : C.ink, { align: 'center' });
     calendarIcon(ctx, 830, Y(560), 1.0, t, 3.4, '30');
     [['300', 360 - 265, 0], ['850', 360 + 265, 0]].forEach(([l, x]) => txt(ctx, l, x, Y(730), 44, DISPLAY, C.ink, { align: 'center', p: P(t, 1.8, 2.2) }));
@@ -795,7 +795,10 @@ function r2(ctx, t) {
     // the bolt: a hexagon on a plate
     ctx.save(); ctx.fillStyle = C.white; rrect(ctx, 290, Y(330), 500, 380, 16); ctx.fill(); ctx.restore();
     stroke(ctx, [[290, Y(330)], [790, Y(330)], [790, Y(710)], [290, Y(710)], [290, Y(330)]], { w: 6, seed: 70 });
-    const turn = P(t, 5.55, 5.85, E.inOutCubic) + P(t, 6.05, 6.35, E.inOutCubic), hx = 540, hy = Y(520);
+    { const fixed = P(t, 6.35, 6.6);
+      for (let l = 0; l < 5; l++) { const ly = Y(380) + l * 64, bad = l === 3; stroke(ctx, [[320, ly], [bad ? 470 : 560 - (l % 2) * 60, ly]], { w: bad ? 12 : 8, color: bad ? (fixed > 0.5 ? C.blue : C.maroon) : C.ink, seed: 80 + l }); }
+      if (fixed < 0.5) txt(ctx, 'ERROR', 400, Y(380) + 3 * 64 + 50, 34, DISPLAY, C.maroon, { align: 'center' }); }
+    const turn = P(t, 5.55, 5.85, E.inOutCubic) + P(t, 6.05, 6.35, E.inOutCubic), hx = 660, hy = Y(560);
     ctx.save(); ctx.translate(hx, hy); ctx.rotate(turn * Math.PI / 3); ctx.fillStyle = C.grey; ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = i * TAU / 6; ctx.lineTo(Math.cos(a) * 34, Math.sin(a) * 34); } ctx.closePath(); ctx.fill(); ctx.restore();
     wrench(ctx, hx, hy, 1.0, -0.9 + turn * 0.7);
     // motion arcs while turning

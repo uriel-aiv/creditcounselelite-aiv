@@ -21,13 +21,7 @@ const DISPLAY = 'Display', UI = 'UI';
 const SRC_FPS = 24000 / 1001, SRC_FRAMES = 423;
 const SEAM = 980, PANEL_H = 990;
 
-const HITS = [
-  [0.95, 'bank', 'thud', { gain: 0.5 }], [1.1, 'ring', 'blip', { pitch: 'E6', gain: 0.3 }], [1.5, 'ring', 'blip', { pitch: 'E6', gain: 0.3 }], [2.6, 'cards', 'thud', { gain: 0.5 }],
-  [3.6, 'brick', 'click', { gain: 0.4 }], [3.95, 'brick', 'click', { gain: 0.4 }], [4.3, 'brick', 'click', { gain: 0.4 }], [4.6, 'brick', 'click', { gain: 0.4 }], [4.95, 'brick', 'click', { gain: 0.4 }],
-  [7.05, '0%', 'pop', { pitch: 'E6', gain: 0.45 }], [8.35, '20,000', 'bell', { pitch: 'G5', gain: 0.35 }],
-  [10.5, 'brick', 'click', { gain: 0.4 }], [10.8, 'brick', 'click', { gain: 0.4 }], [11.1, 'brick', 'click', { gain: 0.4 }], [11.35, 'brick', 'click', { gain: 0.4 }], [11.65, 'brick', 'click', { gain: 0.4 }],
-  [13.3, 'stack', 'pop', { pitch: 'C6', gain: 0.5 }], [15.2, 'to end', 'whoosh', { len: 0.5, from: 500, to: 2400, gain: 0.4 }], [15.45, 'badge', 'thud', { gain: 0.7 }],
-];
+const BANK_LAYERS = [[0, 1], [0.4, 1], [0.8, 1], [1.2, 1], [1.6, 5], [2.8, 5], [4.0, 5], [5.2, 5], [5.6, 1], [6.0, 1], [6.4, 1], [6.8, 1], [7.2, 1], [7.6, 1]];   // bankModel() layers: height, part count
 
 // ------------------------------------------------------------------ helpers
 const sp = (t, t0, cfg = SPRING.snappy) => spring(t - t0, cfg);
@@ -216,10 +210,10 @@ const hideAll = () => SCN.children.forEach((o) => { if (!o.isLight && !o.userDat
 
 // ------------------------------------------------------------------ camera: keyed target/zoom with a spring, extra yaw for orbits
 const rowX = (m) => -18 + (m - 1) * 1.56;
-const CAMK = [[0, [0, 2.0, 0], 1.5], [2.4, [0, 2.4, 0], 1.25], [9.2, [1.5, 2.4, 0], 1.25], [13.2, [3.0, 3.2, 0], 1.35]];
+const CAMK = [[0, [0, 2.0, 0], 1.5], [2.4, [0, 2.4, 0], 1.25], [6.5, [3.0, 2.4, 0], 1.45], [9.3, [0.6, 2.4, 0], 1.25], [12.9, [4.6, 4.2, 0], 1.45]];
 function setCamera(t) {
   const v = springKeys(t, CAMK.map(([a, tg, z]) => [a, [...tg, z]]), { stiffness: 55, damping: 13 });
-  const yaw = 0.785 + 0.06 * Math.sin(t * 0.35) + 0.5 * P(t, 10.6, 14.0, E.inOutSine);
+  const yaw = 0.785 + 0.06 * Math.sin(t * 0.35) + 0.3 * P(t, 12.9, 14.9, E.inOutSine);
   const pitch = 0.58 + 0.03 * Math.sin(t * 0.27);
   const hh = 12 / v[3], hw = hh * (GLC.width / GLC.height);
   CAM.left = -hw; CAM.right = hw; CAM.top = hh; CAM.bottom = -hh; CAM.updateProjectionMatrix();
@@ -365,35 +359,99 @@ let DISC = false;
 // stack slot on a card: brick i of a stack standing on card centre (cx, cz)
 // the card's open 2x2 stud patch is cells x3-4, z1-2 -> centre (+1, 0) from the card centre; plates stack 0.4 apart
 const slot = (cx, cz, i) => [cx + 1, 0.4 + i * 0.4, cz];
+// ---- timing (seconds), shared by the picture and the sound list so they can't drift
+const BANK_T0 = 0.86, BANK_DT = 0.036, BANK_OUT = 2.12;
+const CARD_A = 2.74, CARD_B = 2.9;                       // landing times; card A lands carrying its stack of ten plates
+const HOP = 0.4;                                          // one plate's flight
+const hopT = (order) => (order < 5 ? 3.25 + order * 0.36 : 10.1 + (order - 5) * 0.27);
+const A_OUT = 12.95, WAVE = 14.02;
+// gravity drop with a short damped settle: returns height above rest and a squash amount
+function fall(t, tl, h = 2.6, dur = 0.2) {
+  if (t < tl - dur) return { y: h, sq: 0, vis: false };
+  if (t < tl) { const k = (t - (tl - dur)) / dur; return { y: h * (1 - k * k), sq: -0.06 * k, vis: true }; }
+  const d = t - tl; return { y: Math.max(0, 0.18 * Math.sin(Math.PI * clamp(d / 0.16)) * Math.exp(-d * 6)), sq: 0.16 * Math.exp(-d * 14) * Math.cos(d * 38), vis: true };
+}
+// the bank's parts, bottom-up, each with its landing time (parts on the same layer land a beat apart)
+let BANK_PARTS = null;
+function bankParts() {
+  if (BANK_PARTS) return BANK_PARTS;
+  const kids = G.callBank.children.map((c) => { c.userData.base = c.userData.base || c.position.clone(); return c; });
+  const order = kids.slice().sort((a, b) => a.userData.base.y - b.userData.base.y || a.userData.base.x - b.userData.base.x);
+  order.forEach((c, i) => (c.userData.tl = BANK_T0 + i * BANK_DT));
+  return (BANK_PARTS = order);
+}
 function m1(t) {
-  // call the bank: the bank builds, rings pulse out of it like a phone ringing
-  if (t > 0.7 && t < 3.0) {
-    const k = outK(t, 2.6), d = drop(t, 0.95, 7);
-    put(G.callBank, 1.2, d.y, 3.2, k * (d.vis ? 0.68 : 0), 0.2, d.sq);
-    for (let i = 0; i < 3; i++) { const f = ((t - 1.0) * 1.2 + i / 3) % 1; if (t > 1.0) OV.over.push({ type: 'pop', p: [1.2, 5.6, 2.5], k: f, r: 1.6 }); }
-    if (t > 0.9) OV.over.push({ type: 'big', s: 'CALL THE BANK', x: 540, y: Y(200), size: 120, align: 'center', k: clamp(sp(t, 0.9, SPRING.bouncy)) * outK(t, 2.4, 0.2), hit: -1 });
+  // "call that bank, like Chase": the bank builds itself part by part, then two ring pulses like a phone ringing
+  if (t > BANK_T0 - 0.3 && t < BANK_OUT + 0.3) {
+    const parts = bankParts(), kOut = outK(t, BANK_OUT, 0.26);
+    put(G.callBank, 1.2, 0, 2.6, 0.68 * kOut, 0.2);
+    for (const c of parts) { const f = fall(t, c.userData.tl, 3.0, 0.18), b = c.userData.base; c.visible = f.vis; c.position.set(b.x, b.y + f.y, b.z); c.scale.set(1 + f.sq, 1 - f.sq, 1 + f.sq); }
+    for (const t0 of [1.62, 1.88]) { const k = prog(t, t0, t0 + 0.42); if (k > 0 && k < 1) OV.over.push({ type: 'ring', p: [1.2, 5.5, 1.9], k }); }
+    if (t > 0.9) OV.over.push({ type: 'big', s: 'CALL THE BANK', x: 540, y: Y(215), size: 120, align: 'center', k: clamp(sp(t, 0.9, SPRING.bouncy)) * outK(t, 2.2, 0.2), hit: -1 });
   }
-  if (t < 2.4) return;
-  // two cards: the old card holds the limit stack; the 0% card waits on the right
-  const kA = drop(t, 2.55, 7), kB = drop(t, 2.7, 7);
+  if (t < CARD_A - 0.3) return;
+  // two cards: the old card arrives carrying the limit stack; the 0% card lands on the right
   const A = [-4.2, 0], Bc = [4.2, 0];
-  put(G.cA, A[0], kA.y, A[1], kA.vis ? 1 : 0, 0, kA.sq); put(G.cB, Bc[0], kB.y, Bc[1], kB.vis ? 1 : 0, 0, kB.sq);
-  // each brick: starts on A (stack 0..9), hops to B: bricks 9..5 on "transfer the limit over" (3.2-4.9),
-  // bricks 4..0 on "transfer the rest" (10.1-11.5); B stack grows 0..9; on "stack it up" B bounces and a starburst opens
+  const fA = fall(t, CARD_A, 5, 0.3), fB = fall(t, CARD_B, 5, 0.3);
+  // card B answers its name: a hop on "0% interest card" (twice) and the whole stack rides with it
+  const hopB = (t0) => { const k = prog(t, t0, t0 + 0.36); return k > 0 && k < 1 ? 0.9 * Math.sin(Math.PI * k) : 0; };
+  const dW = t - WAVE, jump = dW > 0 ? 0.9 * Math.max(0, Math.sin(dW * 9)) * Math.exp(-dW * 3.5) : 0;   // "stack it up": card and stack jump together
+  const bY = fB.y + hopB(6.86) + hopB(11.96) + jump;
+  // card A leaves once it is empty: lifts, tips and shrinks away so card B owns the frame
+  const ao = P(t, A_OUT, A_OUT + 0.4, E.inCubic);
+  put(G.cA, A[0] - 3 * ao, fA.y + 2 * ao, A[1], fA.vis ? 1 - ao : 0, 0, fA.sq, 0, 0.5 * ao);
+  put(G.cB, Bc[0], bY, Bc[1], fB.vis ? 1 : 0, 0, fB.sq);
   for (let i = 0; i < 10; i++) {
-    const di = drop(t, 2.85 + i * 0.05, 6), order = 9 - i;                     // top brick moves first
-    const th = order < 5 ? 3.2 + order * 0.33 : 10.1 + (order - 5) * 0.28, kk = P(t, th, th + 0.42, E.inOutSine);
+    const order = 9 - i, th = hopT(order), kk = P(t, th, th + HOP, E.inOutSine);   // top plate moves first
     const from = slot(A[0], A[1], i), to = slot(Bc[0], Bc[1], order);
-    let x = lerp(from[0], to[0], kk), y = lerp(from[1], to[1], kk) + Math.sin(Math.PI * kk) * 3 + (t < th ? di.y : 0), z = lerp(from[2], to[2], kk);
-    const land = t > th + 0.42 ? 0.12 * wobble(t - th - 0.42, 3, 7) : 0, bounce = t > 13.3 ? Math.max(0, Math.sin((t - 13.3 - order * 0.04) * 9)) * 0.5 * Math.exp(-(t - 13.3) * 2) : 0;
-    put(G.lim[i], x, y + bounce, z, di.vis ? 1 : 0, Math.PI * kk, land + di.sq);
-    if (t > th && t < th + 0.6) OV.over.push({ type: 'trail', fn: (u) => [lerp(from[0], to[0], u), lerp(from[1], to[1], u) + Math.sin(Math.PI * u) * 4 + 0.6, lerp(from[2], to[2], u)], p: kk, q: P(t, th + 0.08, th + 0.5, E.inOutSine), w: 26 });
+    const lift = 2.2 + 0.4 * Math.abs(to[1] - from[1]);
+    let x = lerp(from[0], to[0], kk), y = lerp(from[1], to[1], kk) + 4 * lift * kk * (1 - kk), z = lerp(from[2], to[2], kk);
+    const onA = t < th, onB = t >= th + HOP;
+    if (onA) y += fA.y;
+    if (onB) y += bY;
+    // landing: the plate squashes; the plates under it dip with it
+    let sq = onA ? fA.sq : 0;
+    if (onB) { const d = t - th - HOP; sq = 0.14 * Math.exp(-d * 12) * Math.cos(d * 34); }
+    for (let j = 0; j < 10; j++) { const tj = hopT(9 - j) + HOP; if (onB && order < (9 - j) && t > tj && t < tj + 0.25) y -= 0.06 * Math.sin(Math.PI * (t - tj) / 0.25); }
+    // "stack it up": a bounce wave runs up the stack, bottom to top
+    if (onB) y += jump * 0.05 * order;
+    // "20,000": a counting ripple runs up the 0% card's stack, one plate after another
+    if (onB && t > 8.26) for (let j = 0; j <= order; j++) { const d = t - 8.26 - j * 0.07; if (d > 0 && d < 0.22) y += 0.16 * Math.sin(Math.PI * d / 0.22); }   // plates above ride along, no gaps opening   // the column stretches a touch as it leaves the ground
+    if (onA && ao > 0) { x -= 3 * ao; y += 2 * ao; }
+    put(G.lim[i], x, y, z, (onA ? fA.vis && 1 - ao : 1) ? 1 : 0, (Math.PI / 2) * kk, sq);
+    // a short comet trail rides with the plate and is gone the moment it lands
+    if (kk > 0.04 && kk < 0.97) OV.over.push({ type: 'trail', fn: (u) => [lerp(from[0], to[0], u), lerp(from[1], to[1], u) + 4 * lift * u * (1 - u) + 0.5, lerp(from[2], to[2], u)], p: kk, q: Math.max(0, kk - 0.32), w: 22 });
+    const kp = prog(t, th + HOP, th + HOP + 0.28); if (kp > 0 && kp < 1) OV.over.push({ type: 'pop', p: [to[0], to[1] + bY + 0.6, to[2]], k: kp, r: 0.8 });
   }
-  if (t > 13.3) OV.under.push({ type: 'burst', p: [Bc[0] + 1.4, 3.5, -1], r: 200 * clamp(sp(t, 13.3, SPRING.bouncy)), rot: t * 0.3 });
+  // starbursts: under card B on "0%" and again on "stack it up"; each grows in and shrinks out
+  const burst = (a, b, r) => { const k = clamp(sp(t, a, SPRING.bouncy)) * (1 - P(t, b, b + 0.25, E.inBack)); if (t > a && k > 0.01) OV.under.push({ type: 'burst', p: [Bc[0] + 1, 1.5, 0], r: r * k, rot: t * 0.4 }); };
+  burst(6.86, 8.05, 230); burst(WAVE, END - 0.35, 420);
   // labels: one at a time
-  const L = [['TRANSFER THE LIMIT', 3.1, 5.3, 104], ['0% CARD', 6.85, 8.1, 170], ['20,000', 8.15, 9.25, 190], ['COMBINE IT', 9.3, 12.9, 140], ['STACK IT UP', 13.25, 15.5, 140]];
-  for (const [w, a, b, sz] of L) if (t > a && t < b + 0.15) OV.over.push({ type: 'big', s: w, x: 540, y: Y(200), size: sz, align: 'center', k: clamp(sp(t, a, SPRING.bouncy)) * outK(t, b, 0.12), hit: (w === '20,000' || w === '0% CARD') && t > a + 0.2 ? t - a - 0.2 : -1 });
-  DISC = t > 8.15 && t < 12.9;
+  const L = [['TRANSFER THE LIMIT', 3.15, 5.4, 104], ['0% CARD', 6.85, 8.1, 170], ['20,000', 8.2, 9.3, 190], ['COMBINE IT', 9.4, 12.9, 140], ['SMART', 13.15, 13.95, 150], ['STACK IT UP', 14.0, END - 0.3, 140]];
+  for (const [w, a, b, sz] of L) if (t > a && t < b + 0.15) OV.over.push({ type: 'big', s: w, x: 540, y: Y(215), size: sz, align: 'center', k: clamp(sp(t, a, SPRING.bouncy)) * outK(t, b, 0.12), hit: (w === '20,000' || w === '0% CARD') && t > a + 0.2 ? t - a - 0.2 : -1 });
+  DISC = t > 6.8 && t < 12.9;
+}
+// the sound list, derived from the same timings as the picture
+function buildHits() {
+  const h = [];
+  // bank: one click per layer as it lands, rising in pitch as the building grows
+  const ys = [...new Set(bankLayerTimes().map((x) => x[0]))];
+  bankLayerTimes().forEach(([y, tl], i) => h.push([tl, 'part', 'tok', { pitch: ['C5', 'D5', 'E5', 'G5', 'A5', 'C6', 'D6', 'E6'][Math.min(7, ys.indexOf(y) >> 1)], gain: 0.22 }]));
+  h.push([1.62, 'ring', 'blip', { pitch: 'A6', gain: 0.22 }], [1.88, 'ring', 'blip', { pitch: 'A6', gain: 0.22 }], [BANK_OUT + 0.05, 'bank out', 'whoosh', { len: 0.3, from: 2400, to: 700, gain: 0.22 }]);
+  h.push([CARD_A, 'card A', 'thud', { gain: 0.5 }], [CARD_B, 'card B', 'thud', { gain: 0.45 }]);
+  for (let o = 0; o < 10; o++) { const th = hopT(o); h.push([th + HOP * 0.5, 'hop', 'whoosh', { len: 0.3, from: 900, to: 2600, gain: 0.12 }], [th + HOP, 'snap', 'click', { gain: 0.38 }]); }
+  for (let o = 0; o < 5; o++) h.push([8.26 + o * 0.07, 'count', 'tick', { gain: 0.16 }]);
+  h.push([6.86, '0%', 'boing', { pitch: 'C5', to: 'G5', gain: 0.25 }], [6.9, 'burst', 'pop', { pitch: 'E6', gain: 0.35 }], [8.24, '20,000', 'bell', { pitch: 'G5', gain: 0.35 }]);
+  h.push([11.96, '0%', 'boing', { pitch: 'C5', to: 'G5', gain: 0.22 }], [A_OUT + 0.1, 'card A out', 'whoosh', { len: 0.4, from: 600, to: 2200, gain: 0.25 }]);
+  h.push([WAVE + 0.35, 'land', 'thud', { gain: 0.35 }], [WAVE + 0.7, 'land', 'click', { gain: 0.2 }]);
+  h.push([WAVE, 'stack', 'pop', { pitch: 'C6', gain: 0.4 }]);
+  return h.sort((a, b) => a[0] - b[0]);
+}
+// bank landing times grouped by layer (first part of each layer), computed from the model's geometry
+function bankLayerTimes() {
+  const ys = BANK_LAYERS; const out = []; let i = 0;
+  for (const [y, n] of ys) { out.push([y, BANK_T0 + i * BANK_DT]); i += n; }
+  return out;
 }
 // ------------------------------------------------------------------ 2-D: riso marks
 function starburst(ctx, x, y, r, rot, color = C.yellow) {
@@ -438,6 +496,13 @@ function pop(ctx, x, y, k, r = 1) {
     ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * r0, y + Math.sin(ang) * r0); ctx.lineTo(x + Math.cos(ang) * r1, y + Math.sin(ang) * r1); ctx.stroke(); }
   ctx.restore();
 }
+// phone ring: two pairs of ink arcs either side of a point, expanding and fading out
+function ringArcs(ctx, x, y, k) {
+  const a = E.outCubic(k); ctx.save(); ctx.strokeStyle = C.ink; ctx.lineCap = 'round'; ctx.globalAlpha = 1 - E.inCubic(k);
+  for (const r of [50, 82]) { const rr = r + 50 * a; ctx.lineWidth = 7 * (1 - 0.5 * k);
+    ctx.beginPath(); ctx.arc(x, y, rr, -0.55, 0.55); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, rr, Math.PI - 0.55, Math.PI + 0.55); ctx.stroke(); }
+  ctx.restore();
+}
 function curvePts(a, b, lift = 2.5, n = 24) {
   return Array.from({ length: n + 1 }, (_, i) => { const k = i / n; return proj(lerp(a[0], b[0], k), lerp(a[1], b[1], k) + Math.sin(Math.PI * k) * lift, lerp(a[2], b[2], k)); });
 }
@@ -446,6 +511,7 @@ function overlays(ctx, list) {
     if (o.type === 'burst') { const [x, y] = proj(...o.p); starburst(ctx, x, y, o.r, o.rot); }
     if (o.type === 'trail') trail(ctx, o.fn, o.p, o.q, o.w);
     if (o.type === 'pop') { const [x, y] = proj(...o.p); pop(ctx, x, y, o.k, o.r || 1); }
+    if (o.type === 'ring') { const [x, y] = proj(...o.p); ringArcs(ctx, x, y, o.k); }
     if (o.type === 'big' && o.k > 0.01) {
       const bump = o.hit >= 0 ? 1 + 0.08 * wobble(o.hit, 3, 6) : 1;
       ctx.save(); ctx.translate(o.x, o.y); ctx.scale(o.k * bump, o.k * bump); ctx.font = font(o.size, 400, DISPLAY); ctx.textAlign = o.align;
@@ -517,13 +583,13 @@ async function loadFrame(t) {
   FOOT = FCACHE.get(idx);
 }
 function pushIn(t) { for (const [a, b] of FULL_WINDOWS) if (t >= a - 0.5 && t < b + 0.8) return Math.pow(1.1, P(t, a, b + 0.8, E.inOutSine)); return 1; }
-const BUSY = [[1.2, 2.0], [2.5, 3.0], [4.1, 5.3], [7.4, 7.9], [8.7, 9.3], [10.8, 13.8], [14.2, 14.8]];
+const BUSY = [[0.8, 3.0], [3.2, 5.3], [6.8, 7.3], [10.0, 11.5], [11.9, 14.9]];
 const near = (t) => FH_KEYS.some(([k]) => t > k - 0.25 && t < k + 0.8) || BUSY.some(([a, b]) => t > a && t < b);
 
 M.film({
   fonts: [font(96, 400, 'Display'), font(46, 600, 'UI'), font(34, 500, 'UI'), font(100, 400, DISPLAY), font(40, 700, UI)],
   images: { badge: 'assets/badge.png' },
-  hits: HITS,
+  hits: buildHits(),
   samples: (t) => (near(t) ? 6 : 2),
   async init() { const _t0 = performance.now(); buildTextures(); buildWorld(); RD.compile(SCN, CAM); CAPS = buildCaptions(await fetch('assets/words.json').then((r) => r.json())); },
   prepare: (t) => loadFrame(t),

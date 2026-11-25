@@ -439,9 +439,9 @@ function m1(ctx, t) {
   // the cut, centred on the two lines of type
   ctx.save(); ctx.font = font(120, 400, DISPLAY); const cap = ctx.measureText('H').actualBoundingBoxAscent; ctx.restore();
   const cy = (Y(330) - cap / 2 + Y(460) - cap / 2) / 2;   // midpoint of the two lines' visual centres
-  const [f1, t1] = life(t, 1.5, 1.72, 3.0, 3.2);
+  const [f1, t1] = life(t, 1.5, 1.72, 3.5, 3.7);   // the cut stays on until the scene leaves
   line(ctx, [[160, cy - 90], [920, cy + 90]], { w: 12, color: C.orange, from: f1, to: t1 });
-  if (t > 1.65) bigType(ctx, 'MYTH', 540, Y(840), 210, 1, prog(t, 2.9, 3.2), 1.65, t, C.orange, 'center');
+  if (t > 1.65) bigType(ctx, 'MYTH', 540, Y(840), 210, 1, 0, 1.65, t, C.orange, 'center');
   ctx.restore();
 }
 // m2 3.3-8.4: a collection / charge-off sits on the report; people pay it off; a lot of people do this
@@ -455,6 +455,13 @@ function m2(ctx, t) {
   // the two marks land on the report as tags
   [['COLLECTION', 3.5, -40], ['CHARGE-OFF', 3.85, 60]].forEach(([w, t0, oy]) => { const k = pop(t, t0); if (k < 0.01) return;
     ctx.save(); ctx.translate(330 + dx, Y(440) + oy * dsc); ctx.scale(k * dsc, k * dsc); ctx.rotate(-0.06); ctx.fillStyle = C.maroon; ctx.fillRect(-170, -38, 340, 76); txt(ctx, w, 0, 22, 58, DISPLAY, C.white, 'center'); ctx.restore(); });
+  // "thinking that if you pay it off...": the belief, drawn as a dashed arrow to a check with a question mark
+  { const kb = P(t, 4.25, 4.6, E.outCubic), ko = 1 - P(t, 5.45, 5.7);
+    if (kb > 0 && ko > 0) { ctx.save(); ctx.globalAlpha *= ko;
+      line(ctx, [[560, Y(440)], [lerp(560, 720, kb), Y(440)]], { w: 6, dash: [16, 12], march: t * 30, color: C.white });
+      line(ctx, [[760, Y(450)], [830, Y(520)], [960, Y(360)]], { w: 22, color: C.white, to: P(t, 4.55, 4.85, E.outCubic) });
+      txt(ctx, 'FIXED?', 860, Y(650), 96, DISPLAY, C.white, 'center', P(t, 4.8, 5.05));
+      ctx.restore(); } }
   // "pay it off": coins pour in from the right, a paid bar fills under the report
   for (let i = 0; i < 8; i++) {
     const a = 5.75 + i * 0.07, k = P(t, a, a + 0.5, E.inOutCubic); if (t < a || k >= 1) continue;

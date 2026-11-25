@@ -449,11 +449,11 @@ function n1(ctx, t) {
   const cy = Y(lerp(400, 300, row));
   spr(ctx, SP.card, 235 + (1 - E.outBack(clamp(P(t, 0.9, 1.3)))) * -420, cy, 3.4 * pop(t, 0.9) * lerp(1, 0.8, row), -0.06);
   const kc = P(t, 1.3, 1.75, E.inOutCubic); if (t > 1.3) { const q = qAt([340, cy], [520, Y(140)], [740, cy - 20], kc); spr(ctx, SP.percentO, q[0], q[1], 0.9 + 0.6 * kc, kc * 4, 1 - P(t, 1.62, 1.8)); }
-  if (t > 1.6) bigType(ctx, `${Math.max(1, Math.round(lerp(0, 3, P(t, 1.6, 2.0))))}%`, 750, cy + 40, 340 * lerp(1, 0.85, row), 1, 0, 1.6, t, C.white, 'center');
+  if (t > 1.75) bigType(ctx, '3%', 750, cy + 40, 340 * lerp(1, 0.85, row), 1, 0, 1.75, t, C.white, 'center');
   txt(ctx, 'COMMON FEE', 750, cy + 150 * lerp(1, 0.85, row), 84, DISPLAY, C.mint, 'center', P(t, 2.2, 2.5));
   rings(ctx, 750, cy - 40, [250, 330], P(t, 1.7, 2.1, E.outBack) * (1 - row), t);
   // "more common? yes": a row of cards, each one stamped with the same fee chip
-  for (let i = 0; i < 4; i++) { const k = pop(t, 3.0 + i * 0.08), x = 165 + i * 250; spr(ctx, SP.card, x, Y(750), 1.4 * k, 0); if (t > 3.6 + i * 0.08) spr(ctx, SP.percentO, x + 30, Y(745), 0.6 * pop(t, 3.6 + i * 0.08), 0); }
+  for (let i = 0; i < 4; i++) { const k = pop(t, 3.0 + i * 0.08), x = 165 + i * 250; spr(ctx, SP.card, x, Y(780), 1.4 * k, 0); if (t > 3.6 + i * 0.08) spr(ctx, SP.percentO, x, Y(665), 0.36 * pop(t, 3.6 + i * 0.08), 0); }
   ctx.restore();
 }
 function n2(ctx, t) {
@@ -462,8 +462,8 @@ function n2(ctx, t) {
   ctx.save(); ctx.globalAlpha = ar.alpha * th.alpha; camera(ctx, t, ar.s * th.s, 540, 470, -0.008 + 0.006 * Math.sin(t * 0.6));
   // "some, like Chase or some of these other banks": one bank lights orange, then the others join
   const up = P(t, 7.0, 7.45, E.inOutCubic);
-  [[540, 5.0, true], [210, 6.3, false], [870, 6.5, false]].forEach(([x, t0, hot]) => { const k = pop(t, t0); spr(ctx, hot ? SP.bankO : SP.bank, lerp(x, 540 + (x - 540) * 0.62, up), Y(lerp(400, 230, up)) + 6 * Math.sin(t * 2 + x), lerp(2.8, 1.6, up) * k, 0); });
-  txt(ctx, 'SOME BANKS', 540, Y(720), 120, DISPLAY, C.white, 'center', P(t, 4.6, 4.9) * (1 - P(t, 6.9, 7.1)));
+  [[540, 4.55, true], [220, 6.3, false], [860, 6.5, false]].forEach(([x, t0, hot]) => { const k = pop(t, t0); spr(ctx, hot ? SP.bankO : SP.bank, lerp(x, 540 + (x - 540) * 0.62, up), Y(lerp(400, 230, up)) + 6 * Math.sin(t * 2 + x), lerp(2.3, 1.5, up) * k, 0); });
+  txt(ctx, 'SOME BANKS', 540, Y(720), 120, DISPLAY, C.white, 'center', P(t, 4.65, 4.9) * (1 - P(t, 6.9, 7.1)));
   // "the last year or so": a 12-month ring fills month by month under the banks
   const yr = P(t, 7.4, 9.3, E.inOutSine), RX = 330, RY = 190, CY = Y(640);
   for (let m = 0; m < 12; m++) { const ang = -Math.PI / 2 + m * TAU / 12; node(ctx, 540 + Math.cos(ang) * RX, CY + Math.sin(ang) * RY, yr * 12 > m ? 18 : 12, P(t, 7.1 + m * 0.02, 7.3 + m * 0.02), yr * 12 > m ? C.orange : C.white); }

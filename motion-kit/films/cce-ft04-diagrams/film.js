@@ -725,7 +725,7 @@ function chalkboard(ctx, x, y, t, t0) {
 function d2(ctx, t) {
   if (t < 5.2) return;
   txt(ctx, 'NOT TAUGHT', 540, Y(150), 96, DISPLAY, C.blue, { align: 'center', p: P(t, 5.3, 5.75) });
-  chalkboard(ctx, 290, Y(500), t, 5.85);
+  chalkboard(ctx, 290, Y(500), t, 5.45);
   txt(ctx, 'SCHOOL', 290, Y(770), 84, DISPLAY, C.ink, { align: 'center', p: P(t, 6.3, 6.6) });
   { const yy = Y(500) - 95 + 3 * 66, b = textBox(ctx, 'CREDIT', 290 - 160, yy + 16, 46, DISPLAY, 'left'), pad = 14;
     stroke(ctx, [[b.cx - b.w / 2 - pad, b.cy], [b.cx + b.w / 2 + pad, b.cy]], { w: 10, color: C.maroon, p: P(t, 6.95, 7.2, E.outCubic), seed: 71, amp: 0.8 });

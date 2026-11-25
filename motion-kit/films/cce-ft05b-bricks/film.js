@@ -21,13 +21,7 @@ const DISPLAY = 'Display', UI = 'UI';
 const SRC_FPS = 24000 / 1001, SRC_FRAMES = 465;
 const SEAM = 980, PANEL_H = 990;
 
-const HITS = [
-  [1.25, 'boxes', 'click', { gain: 0.45 }], [1.43, 'boxes', 'click', { gain: 0.45 }], [1.61, 'boxes', 'click', { gain: 0.45 }], [2.55, 'yellow', 'thud', { gain: 0.6 }],
-  [4.15, '700s', 'pop', { pitch: 'C6', gain: 0.4 }], [5.0, 'wobble', 'tick', { gain: 0.3 }], [7.45, 'card', 'thud', { gain: 0.5 }],
-  [8.75, 'user', 'click', { gain: 0.5 }], [8.9, 'user', 'click', { gain: 0.5 }], [9.35, 'yellow box', 'thud', { gain: 0.45 }], [10.0, 'turns green', 'bell', { pitch: 'E6', gain: 0.4 }], [10.9, 'parent', 'click', { gain: 0.45 }], [11.05, 'parent', 'click', { gain: 0.45 }],
-  [11.05, 'trail', 'whoosh', { len: 0.6, from: 600, to: 2200, gain: 0.25 }], [12.2, 'friend', 'click', { gain: 0.45 }], [12.6, 'family', 'click', { gain: 0.45 }],
-  [14.3, 'screen', 'thud', { gain: 0.55 }], [16.85, 'to end', 'whoosh', { len: 0.5, from: 500, to: 2400, gain: 0.4 }], [17.1, 'badge', 'thud', { gain: 0.7 }],
-];
+
 
 // ------------------------------------------------------------------ helpers
 const sp = (t, t0, cfg = SPRING.snappy) => spring(t - t0, cfg);
@@ -227,7 +221,7 @@ const hideAll = () => SCN.children.forEach((o) => { if (!o.isLight && !o.userDat
 
 // ------------------------------------------------------------------ camera: keyed target/zoom with a spring, extra yaw for orbits
 const rowX = (m) => -18 + (m - 1) * 1.56;
-const CAMK = [[0, [0, 1.6, 0], 1.15], [4.2, [0.6, 1.8, 0], 1.2], [7.2, [0, 2.2, 0], 1.5], [10.6, [-1.2, 3.6, -1.0], 1.1], [14.1, [0.5, 3.0, -2.5], 1.25]];
+const CAMK = [[0, [0, 1.6, 0], 1.15], [4.2, [0.6, 1.8, 0], 1.2], [7.2, [0, 2.2, 0], 1.5], [10.6, [-1.8, 3.0, -1.8], 1.1], [14.1, [0.5, 3.0, -2.5], 1.25]];
 function setCamera(t) {
   const v = springKeys(t, CAMK.map(([a, tg, z]) => [a, [...tg, z]]), { stiffness: 55, damping: 13 });
   const yaw = 0.785 + 0.06 * Math.sin(t * 0.35) + 0.5 * P(t, 10.6, 14.0, E.inOutSine);
@@ -369,55 +363,105 @@ function b7(t) {
 }
 
 
+
+// ------------------------------------------------------------------ footage test: Video 24 "The authorized-user strategy" (16.6 s)
+// ---- timing shared by picture and sound
+const BOX_T = [1.25, 1.35, 1.45, 1.55, 1.65, 2.55];          // five green bricks on "the other boxes", the yellow one on "yellow"
+const ROCK = [4.12, 4.94];                                     // "mid" / "lower": the yellow brick rocks, unsure
+const CARD_T = 7.45, MINI_T = [8.75, 8.92], FIXY_T = 9.75, TURN_T = 10.0;
+const FOLK_T = [10.94, 11.1, 12.2, 12.56];                     // parents (x2), friends, family
+const SCR_T0 = 14.25, SCR_DT = 0.06, BUY_T = 15.4;
+// gravity drop with a short damped settle: height above rest + squash
+function fall(t, tl, h = 2.6, dur = 0.2) {
+  if (t < tl - dur) return { y: h, sq: 0, vis: false };
+  if (t < tl) { const k = (t - (tl - dur)) / dur; return { y: h * (1 - k * k), sq: -0.06 * k, vis: true }; }
+  const d = t - tl; return { y: Math.max(0, 0.18 * Math.sin(Math.PI * clamp(d / 0.16)) * Math.exp(-d * 6)), sq: 0.16 * Math.exp(-d * 14) * Math.cos(d * 38), vis: true };
+}
+// a quick spring pop-up from the ground (for figures): scale and squash
+function rise(t, t0) { const k = clamp(sp(t, t0, SPRING.bouncy)); return { s: k, sq: t > t0 ? 0.12 * Math.exp(-(t - t0) * 9) * Math.cos((t - t0) * 30) : 0 }; }
 let DISC = false;
 // ------------------------------------------------------------------ footage test: Video 24 "The authorized-user strategy" (16.6 s)
 // k1 0.9-5.9: all the other boxes are good, but you're in the yellow (mid to lower 700s)
 function k1(t) {
-  if (t < 0.85 || t > 6.3) return;
+  if (t < 0.7 || t > 6.3) return;
   const k = outK(t, 5.85);
-  { const db = drop(t, 1.05, 6); put(G.boxBase, -0.5, db.y, 0, k * (db.vis ? 1 : 0), 0, db.sq); }
+  { const db = fall(t, 1.05, 4, 0.3); put(G.boxBase, -0.5, db.y, 0, k * (db.vis ? 1 : 0), 0, db.sq); }
   G.boxes.forEach((m, i) => {
-    const tl = i < 5 ? 1.25 + i * 0.09 : 2.55, d = drop(t, tl, 7);
-    const shake = i === 5 && t > 4.5 ? 0.12 * Math.sin((t - 4.5) * 30) * Math.exp(-(t - 4.5) * 3) : 0;
-    put(m, -8 + i * 3, 0.4 + d.y, 0, k * (d.vis ? 1 : 0), 0, d.sq);   // plugged on the baseplate (no rotation off the studs)
-    if (shake) put(m, -8 + i * 3, 0.4 + Math.abs(shake) * 2, 0, k, 0, d.sq);
-    if (t > tl && t < tl + 0.4) OV.over.push({ type: 'pop', p: [-8 + i * 3, 2.0, 0], k: prog(t, tl, tl + 0.4), r: i === 5 ? 1.1 : 0.7 });
+    const tl = BOX_T[i], d = fall(t, tl, i === 5 ? 4 : 3, i === 5 ? 0.26 : 0.2);
+    // "good": the greens do a little bounce wave; "mid / lower": the yellow rocks on its studs
+    const wave = i < 5 && t > 1.78 ? 0.35 * Math.max(0, Math.sin((t - 1.78 - i * 0.06) * 10)) * Math.exp(-(t - 1.78) * 5) : 0;
+    let rz = 0; if (i === 5) for (const r0 of ROCK) if (t > r0) rz += 0.34 * Math.sin((t - r0) * 14) * Math.exp(-(t - r0) * 4);
+    put(m, -8 + i * 3, 0.4 + d.y + wave + Math.abs(rz) * 0.6, 0, k * (d.vis ? 1 : 0), 0, d.sq, 0, rz);
+    const kp = prog(t, tl, tl + 0.3); if (kp > 0 && kp < 1) OV.over.push({ type: 'pop', p: [-8 + i * 3, 1.8, 0], k: kp, r: i === 5 ? 1.0 : 0.6 });
   });
-  if (t > 2.55) OV.under.push({ type: 'burst', p: [7, 1.2, 0], r: 150 * clamp(sp(t, 2.55, SPRING.bouncy)) * k, rot: t * 0.3 });
-  if (t > 4.15) OV.over.push({ type: 'big', s: 'MID–LOW 700s', x: 540, y: Y(230), size: 130, align: 'center', k: clamp(sp(t, 4.15, SPRING.bouncy)) * k, hit: t > 5.0 ? t - 5.0 : -1 });
+  // the yellow gets one short starburst when it lands (in and out within a second)
+  { const kb = clamp(sp(t, 2.55, SPRING.bouncy)) * (1 - P(t, 3.3, 3.55, E.inBack)); if (t > 2.55 && kb > 0.01) OV.under.push({ type: 'burst', p: [7, 1.2, 0], r: 150 * kb * k, rot: t * 0.3 }); }
+  if (t > 4.15) OV.over.push({ type: 'big', s: 'MID–LOW 700s', x: 540, y: Y(230), size: 130, align: 'center', k: clamp(sp(t, 4.15, SPRING.bouncy)) * k, hit: t > 4.94 ? t - 4.94 : -1 });
   else if (t > 1.2) OV.over.push({ type: 'big', s: 'YOUR PROFILE', x: 540, y: Y(230), size: 120, align: 'center', k: clamp(sp(t, 1.2, SPRING.bouncy)) * outK(t, 3.95, 0.2), hit: -1 });
 }
 // k3 7.3-16.7: adding authorized users: parents, friends, family; an industry online
-const FOLK = [[-7.4, 4.1, 10.9], [-5.2, 0.4, 11.05], [-2.0, -4.6, 12.2], [0.8, -8.6, 12.6]];   // a row across the screen, behind-left of the card   // a row standing behind the card
+const FOLK = [[-6.7, -0.3], [-4.6, -2.4], [-2.4, -4.6], [-0.3, -6.7]];   // a row behind the card, spread across the screen   // a shallow arc standing behind the card
 function k3(t) {
-  if (t < 7.2) return;
-  const dc = drop(t, 7.45, 7); put(G.auCard, 0, dc.y, 0, dc.vis ? 1.15 : 0, 0.1 * Math.sin(t * 0.6), dc.sq);
-  // two users snap onto the card on "authorized users"
-  // "authorized users": the account issues two more cards; they slide out from under the parent card, fanned in front
-  [[-2.4, 4.4, 0, 8.75], [2.4, 4.4, 0, 8.9]].forEach(([x, z, ry, tl], i) => { const u = P(t, tl, tl + 0.45, E.outBack); if (u <= 0.001) return;
-    put(G.auMini[i], lerp(0, x, u), Math.sin(Math.PI * clamp(u)) * 1.2, lerp(0, z, u), 0.62 * outK(t, 10.55, 0.3), 0, 0);
-    if (t > tl + 0.3 && t < tl + 0.7) OV.over.push({ type: 'pop', p: [x, 0.8, z], k: prog(t, tl + 0.3, tl + 0.7), r: 0.6 }); });
-  // the payoff: the yellow box from the profile drops in beside the card and turns green
-  const dy = drop(t, 9.35, 7), turn = t > 10.0;
+  if (t < 7.1) return;
+  // the card lands, then hops on "it all comes down to"
+  const dc = fall(t, CARD_T, 5, 0.3), hk = prog(t, 8.26, 8.6), hop = hk > 0 && hk < 1 ? 0.8 * Math.sin(Math.PI * hk) : 0;
+  put(G.auCard, 0, dc.y + hop, 0, dc.vis ? 1.15 : 0, 0.1 * Math.sin(t * 0.6), dc.sq);
+  // "authorized users": the account issues two more cards; they slide out from under it, fanned in front
+  [[-2.4, 4.4], [2.4, 4.4]].forEach(([x, z], i) => { const tl = MINI_T[i], u = P(t, tl, tl + 0.4, E.outBack); if (u <= 0.001) return;
+    put(G.auMini[i], lerp(0, x, u), 0.5 * Math.sin(Math.PI * clamp(u)), lerp(0, z, u), 0.62 * outK(t, 10.55, 0.3), 0, 0);
+    const kp = prog(t, tl + 0.35, tl + 0.65); if (kp > 0 && kp < 1) OV.over.push({ type: 'pop', p: [x, 0.8, z], k: kp, r: 0.55 }); });
+  // the payoff: the yellow box from the profile flies in beside the card and turns green
   if (t < 12.4) {
-    put(G.fixY, 4.6, dy.y, 1.2, dy.vis && !turn ? 1 : 0, 0, dy.sq);
-    const kg = turn ? clamp(sp(t, 10.0, SPRING.bouncy)) : 0; put(G.fixG, 4.6, 0, 1.2, kg * outK(t, 12.0, 0.3), 0, turn ? 0.15 * wobble(t - 10.0, 3, 6) : 0);
-    if (t > 10.0 && t < 10.45) OV.over.push({ type: 'pop', p: [4.6, 1.8, 1.2], k: prog(t, 10.0, 10.45), r: 1.1 });
-    if (t > 10.0) OV.under.push({ type: 'burst', p: [4.6, 0.6, 1.2], r: 120 * clamp(sp(t, 10.0, SPRING.bouncy)) * outK(t, 12.0, 0.3), rot: t * 0.4 });
-    if (t > 8.85 && t < 10.0) OV.over.push({ type: 'trail', fn: (u) => [lerp(0, 4.6, u), 1.4 + Math.sin(Math.PI * u) * 2.5, lerp(0, 1.2, u)], p: P(t, 9.4, 9.9, E.inOutSine), q: P(t, 9.6, 10.0, E.inOutSine), w: 24 });
+    const fy = P(t, FIXY_T - 0.45, FIXY_T, E.inOutSine), from = [8, 6, 1.2], to = [4.6, 0, 1.2];
+    const yx = lerp(from[0], to[0], fy), yy = lerp(from[1], to[1], fy) + 1.5 * Math.sin(Math.PI * fy);
+    const settle = t > FIXY_T ? 0.14 * Math.exp(-(t - FIXY_T) * 12) * Math.cos((t - FIXY_T) * 34) : 0;
+    put(G.fixY, yx, yy, 1.2, t > FIXY_T - 0.45 && t < TURN_T ? 1 : 0, 0, settle);
+    if (fy > 0.04 && fy < 0.97) OV.over.push({ type: 'trail', fn: (u) => [lerp(from[0], to[0], u), lerp(from[1], to[1], u) + 1.5 * Math.sin(Math.PI * u) + 0.6, 1.2], p: fy, q: Math.max(0, fy - 0.32), w: 22 });
+    const kg = t > TURN_T ? clamp(sp(t, TURN_T, SPRING.bouncy)) : 0; put(G.fixG, 4.6, 0, 1.2, kg * outK(t, 12.0, 0.3), 0, t > TURN_T ? 0.15 * wobble(t - TURN_T, 3, 6) : 0);
+    const kp = prog(t, TURN_T, TURN_T + 0.35); if (kp > 0 && kp < 1) OV.over.push({ type: 'pop', p: [4.6, 1.8, 1.2], k: kp, r: 1.0 });
+    const kb = clamp(sp(t, TURN_T, SPRING.bouncy)) * (1 - P(t, 10.7, 10.95, E.inBack)); if (t > TURN_T && kb > 0.01) OV.under.push({ type: 'burst', p: [4.6, 0.6, 1.2], r: 120 * kb, rot: t * 0.4 });
   }
   if (t > 8.7) OV.over.push({ type: 'big', s: '+ AUTHORIZED USERS', x: 540, y: Y(200), size: 104, align: 'center', k: clamp(sp(t, 8.7, SPRING.bouncy)) * outK(t, 10.55, 0.25), hit: -1 });
-  // parents, friends, family drop in around it; a comet trail runs from each to the card
-  FOLK.forEach(([x, z, tl], i) => {
-    const d = drop(t, tl, 7); put(G.folk[i], x, d.y, z, d.vis ? 0.8 * outK(t, 14.05, 0.3) : 0, 0, d.sq);
-    const tr = P(t, tl + 0.15, tl + 0.75, E.inOutSine);
-    if (t > tl + 0.1 && t < tl + 1.1) OV.over.push({ type: 'trail', fn: (u) => [lerp(x, 0, u), 1.5 + Math.sin(Math.PI * u) * 3, lerp(z, 0, u)], p: tr, q: P(t, tl + 0.3, tl + 0.95, E.inOutSine), w: 26 });
+  // parents, friends, family spring up behind the card; a short trail runs from each to the card and is gone on arrival
+  FOLK.forEach(([x, z], i) => {
+    const tl = FOLK_T[i], r = rise(t, tl), ko = outK(t, 13.8 + i * 0.04, 0.24);
+    put(G.folk[i], x, 0, z, r.s > 0.002 ? 0.8 * r.s * ko : 0, 0, r.sq);
+    const tr = P(t, tl + 0.12, tl + 0.5, E.inOutSine);
+    if (tr > 0.04 && tr < 0.97) OV.over.push({ type: 'trail', fn: (u) => [lerp(x, 0, u), 2.0 + Math.sin(Math.PI * u) * 1.8, lerp(z, 0, u)], p: tr, q: Math.max(0, tr - 0.35), w: 20 });
+    const kp = prog(t, tl + 0.5, tl + 0.78); if (kp > 0 && kp < 1) OV.over.push({ type: 'pop', p: [0, 1.0, 0], k: kp, r: 0.5 });
   });
-  const labels = [['PARENTS', 10.85, 11.95], ['FRIENDS', 12.15, 12.42], ['FAMILY', 12.55, 13.95]];
-  for (const [w, a, b] of labels) if (t > a && t < b + 0.15) OV.over.push({ type: 'big', s: w, x: 540, y: Y(200), size: 130, align: 'center', k: clamp(sp(t, a, SPRING.bouncy)) * outK(t, b, 0.12), hit: -1 });
-  // an online store screen drops behind the card
-  const ds = drop(t, 14.3, 8); put(G.screen, 0, ds.y, -5.5, ds.vis ? 1 : 0, 0, ds.sq);
-  if (t > 14.3) OV.over.push({ type: 'big', s: 'SOLD ONLINE', x: 540, y: Y(200), size: 120, align: 'center', k: clamp(sp(t, 14.3, SPRING.bouncy)), hit: -1 });
+  const labels = [['PARENTS', 10.9, 12.05], ['FRIENDS & FAMILY', 12.15, 13.9]];
+  for (const [w, a, b] of labels) if (t > a && t < b + 0.15) OV.over.push({ type: 'big', s: w, x: 540, y: Y(200), size: w.length > 10 ? 104 : 130, align: 'center', k: clamp(sp(t, a, SPRING.bouncy)) * outK(t, b, 0.12), hit: -1 });
+  // "an industry online": a brick monitor builds behind the card, row by row
+  if (t > SCR_T0 - 0.3) {
+    put(G.screen, 0, 0, -5.5, 1, 0, 0);
+    G.screen.children.forEach((c, i) => { c.userData.base = c.userData.base || c.position.clone(); const f = fall(t, SCR_T0 + i * SCR_DT, 2.6, 0.18), b = c.userData.base; c.visible = f.vis; c.position.set(b.x, b.y + f.y, b.z); c.scale.set(1 + f.sq, 1 - f.sq, 1 + f.sq); });
+    // "purchase them": a card slides out of the screen and lands next to the card
+    const kb = P(t, BUY_T, BUY_T + 0.5, E.inOutSine), from = [0, 3.4, -4.6], to = [0, 0, 4.7];
+    if (t > BUY_T) { const land = t > BUY_T + 0.5 ? 0.14 * Math.exp(-(t - BUY_T - 0.5) * 12) * Math.cos((t - BUY_T - 0.5) * 34) : 0;
+      put(G.auMini[1], lerp(from[0], to[0], kb), lerp(from[1], to[1], kb) + 1.4 * Math.sin(Math.PI * kb), lerp(from[2], to[2], kb), 0.62 * clamp(kb * 4), 0.3 * (1 - kb), land);
+      if (kb > 0.04 && kb < 0.97) OV.over.push({ type: 'trail', fn: (u) => [lerp(from[0], to[0], u), lerp(from[1], to[1], u) + 1.4 * Math.sin(Math.PI * u) + 0.4, lerp(from[2], to[2], u)], p: kb, q: Math.max(0, kb - 0.32), w: 22 });
+      const kp = prog(t, BUY_T + 0.5, BUY_T + 0.8); if (kp > 0 && kp < 1) OV.over.push({ type: 'pop', p: [to[0], 0.8, to[2]], k: kp, r: 0.6 }); }
+  }
+  DISC = t > 9.7 && t < 12.4;
+  if (t > 14.3) OV.over.push({ type: 'big', s: 'SOLD ONLINE', x: 540, y: Y(200), size: 120, align: 'center', k: clamp(sp(t, 14.3, SPRING.bouncy)) * outK(t, 16.45, 0.2), hit: -1 });
+}
+function buildHits() {
+  const h = [];
+  h.push([1.05, 'baseplate', 'thud', { gain: 0.35 }]);
+  BOX_T.forEach((tl, i) => h.push([tl, 'box', i === 5 ? 'thud' : 'click', i === 5 ? { gain: 0.55 } : { gain: 0.32 }]));
+  h.push([2.57, 'burst', 'pop', { pitch: 'E6', gain: 0.3 }], [1.8, 'good', 'tok', { pitch: 'G5', gain: 0.18 }]);
+  ROCK.forEach((r) => h.push([r, 'rock', 'tick', { gain: 0.3 }], [r + 0.12, 'rock', 'tick', { gain: 0.22 }]));
+  h.push([4.15, '700s', 'pop', { pitch: 'C6', gain: 0.3 }]);
+  h.push([CARD_T, 'card', 'thud', { gain: 0.5 }], [8.3, 'hop', 'boing', { pitch: 'C5', to: 'G5', gain: 0.2 }]);
+  MINI_T.forEach((m) => h.push([m + 0.35, 'user card', 'click', { gain: 0.4 }]));
+  h.push([FIXY_T - 0.25, 'fly', 'whoosh', { len: 0.4, from: 700, to: 2400, gain: 0.2 }], [FIXY_T, 'yellow lands', 'click', { gain: 0.4 }], [TURN_T, 'turns green', 'bell', { pitch: 'E6', gain: 0.35 }]);
+  FOLK_T.forEach((f, i) => h.push([f, 'person', 'tok', { pitch: ['C5', 'E5', 'G5', 'C6'][i], gain: 0.28 }], [f + 0.5, 'joins', 'blip', { pitch: 'E6', gain: 0.12 }]));
+  h.push([13.83, 'folk out', 'whoosh', { len: 0.3, from: 2400, to: 700, gain: 0.18 }]);
+  for (let i = 0; i < 12; i += 2) h.push([SCR_T0 + i * SCR_DT, 'screen', 'click', { gain: 0.22 }]);
+  h.push([BUY_T + 0.25, 'buy', 'whoosh', { len: 0.4, from: 700, to: 2400, gain: 0.2 }], [BUY_T + 0.5, 'buy lands', 'click', { gain: 0.4 }]);
+  h.push([16.85, 'to end', 'whoosh', { len: 0.5, from: 500, to: 2400, gain: 0.4 }], [17.1, 'badge', 'thud', { gain: 0.7 }]);
+  return h.sort((x, y) => x[0] - y[0]);
 }
 
 // ------------------------------------------------------------------ 2-D: riso marks
@@ -548,7 +592,7 @@ const near = (t) => FH_KEYS.some(([k]) => t > k - 0.25 && t < k + 0.8) || BUSY.s
 M.film({
   fonts: [font(96, 400, 'Display'), font(46, 600, 'UI'), font(34, 500, 'UI'), font(100, 400, DISPLAY), font(40, 700, UI)],
   images: { badge: 'assets/badge.png' },
-  hits: HITS,
+  hits: buildHits(),
   samples: (t) => (near(t) ? 6 : 2),
   async init() { const _t0 = performance.now(); buildTextures(); buildWorld(); RD.compile(SCN, CAM); CAPS = buildCaptions(await fetch('assets/words.json').then((r) => r.json())); },
   prepare: (t) => loadFrame(t),
