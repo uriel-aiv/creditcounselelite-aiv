@@ -110,7 +110,7 @@ function buildWallpaper(IMG) {
 }
 function wallpaper(ctx, t, IMG) {
   ctx.drawImage(WALL, 0, 0);
-  if (!IMG.badge) return;
+  return;   // no wallpaper badge: it showed through and under the app windows
   const end = 0;
   const cy = lerp(Y(610), 700, end), s = lerp(210, 520, end), ar = IMG.badge.height / IMG.badge.width;
   ctx.save(); ctx.scale(S, S); ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 40 * S; ctx.shadowOffsetY = 12 * S;
@@ -122,7 +122,7 @@ function menuBar(ctx, t, IMG) {
   const y = Math.min(Y(0), 0);
   ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(0, y, DW, 50);
   if (IMG.badge) ctx.drawImage(IMG.badge, 22, y + 9, 42, 42 * IMG.badge.height / IMG.badge.width);
-  txt(ctx, 'Finder', 84, y + 34, 26, 700, C.white);
+  txt(ctx, 'CCE', 84, y + 34, 26, 700, C.white);
   ['File', 'Edit', 'View', 'Window'].reduce((x0, w) => { txt(ctx, w, x0, y + 34, 25, 500, C.white); return x0 + w.length * 14 + 34; }, 190);
   // status: wifi, battery, search, clock
   ctx.save(); ctx.strokeStyle = C.white; ctx.fillStyle = C.white; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
@@ -572,20 +572,20 @@ function d4(ctx, t) {
 function d5(ctx, t) {
   if (t < 22.2 || t > 27.5) return;
   const i1 = winIn(t, 22.25), o1 = winOut(t, 25.35);
-  const { x, w, h } = CALC, y = Y(CALC.y + 60), k = i1.k * o1.k, a = i1.a * o1.a;
+  const { x, w, h } = CALC, y = Y(CALC.y + 40), k = i1.k * o1.k, a = i1.a * o1.a;
   if (k > 0.01 && a > 0.01) {
-    ctx.save(); ctx.globalAlpha *= a; ctx.translate(x + w / 2, y + h / 2); ctx.scale(k, k); ctx.translate(-(x + w / 2), -(y + h / 2));
+    ctx.save(); ctx.globalAlpha *= a; ctx.translate(x + w / 2, y + h / 2); ctx.scale(k * 0.8, k * 0.8); ctx.translate(-(x + w / 2), -(y + h / 2));
     ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 50 * S; ctx.shadowOffsetY = 20 * S; ctx.fillStyle = '#1C1C1E'; rrect(ctx, x, y, w, h, 28); ctx.fill(); ctx.shadowColor = 'transparent';
     [C.red, C.yel, C.grn].forEach((c, j) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x + 32 + j * 28, y + 30, 9, 0, TAU); ctx.fill(); });
     const disp = t < 24.75 ? typed('500,000', t, 22.35, 22.85) || '0' : '0%';
     const bump = t > 24.75 ? 1 + 0.06 * wobble(t - 24.75, 3, 7) : 1;
-    ctx.save(); ctx.translate(x + w - 30, y + 200); ctx.scale(bump, bump); txt(ctx, disp, 0, 0, disp.length > 5 ? 96 : 120, 500, C.white, 'right'); ctx.restore();
+    ctx.save(); ctx.translate(x + w - 30, y + 200); ctx.scale(bump, bump); txt(ctx, disp, 0, 0, disp.length > 5 ? 74 : 120, 500, C.white, 'right'); ctx.restore();
     txt(ctx, t < 24.75 ? 'up to' : 'as low as', x + 30, y + 110, 28, 500, '#A5A5A5');
-    for (let r = 0; r < 5; r++) for (let c = 0; c < 4; c++) { const lbl = KEYS[r][c]; if (r === 4 && c === 1) continue; const [cx, cy0] = keyPos(r, c), cy = Y(cy0 + 60); const kw = r === 4 && c === 0 ? 182 : 84; ctx.fillStyle = c === 3 ? '#CB9938' : r === 0 && c < 3 ? '#A5A5A5' : '#3A3A3C'; rrect(ctx, cx - kw / 2, cy - 36, kw, 72, 36); ctx.fill(); txt(ctx, lbl, cx, cy + 13, 36, 500, r === 0 && c < 3 ? '#1C1C1E' : C.white, 'center'); }
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 4; c++) { const lbl = KEYS[r][c]; if (r === 4 && c === 1) continue; const [cx, cy0] = keyPos(r, c), cy = Y(cy0 + 40); const kw = r === 4 && c === 0 ? 182 : 84; ctx.fillStyle = c === 3 ? '#CB9938' : r === 0 && c < 3 ? '#A5A5A5' : '#3A3A3C'; rrect(ctx, cx - kw / 2, cy - 36, kw, 72, 36); ctx.fill(); txt(ctx, lbl, cx, cy + 13, 36, 500, r === 0 && c < 3 ? '#1C1C1E' : C.white, 'center'); }
     ctx.restore();
   }
   // documents on the desktop, dragged to the trash on "documentation"
-  const docs = [[640, 260], [800, 260], [720, 470]];
+  const docs = [[560, 250], [800, 250], [680, 480]];
   docs.forEach(([dx, dy], j) => {
     const kd = clamp(sp(t, 25.35 + j * 0.06, SPRING.bouncy)); if (kd <= 0.01 || t > 26.65) return;
     if (t < 25.9) item(ctx, SPR.doc, ['statement.pdf', 'tax_return.pdf', 'paystub.pdf'][j], dx, Y(dy), kd, t > 25.75, 1, 150);
@@ -670,7 +670,7 @@ M.film({
     wallpaper(ctx, t, IMG);
     ctx.save(); ctx.scale(S, S);
     menuBar(ctx, t, IMG);
-    { const m = 1 + 0.25 * clamp(1 - fh / SEAM); ctx.save(); ctx.translate(540, 960); ctx.scale(m, m); ctx.translate(-540, -960);
+    { const m = 1 + 0.06 * clamp(1 - fh / SEAM); /* windows already wide: grow only a little */ ctx.save(); ctx.translate(540, 960); ctx.scale(m, m); ctx.translate(-540, -960);
     d1(ctx, t); d2(ctx, t); d3(ctx, t); d4(ctx, t); d5(ctx, t); d6(ctx, t); ctx.restore(); }
     dock(ctx, t);
     pointer(ctx, t);

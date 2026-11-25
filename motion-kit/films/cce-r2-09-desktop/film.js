@@ -110,7 +110,7 @@ function buildWallpaper(IMG) {
 }
 function wallpaper(ctx, t, IMG) {
   ctx.drawImage(WALL, 0, 0);
-  if (!IMG.badge) return;
+  return;   // no wallpaper badge: it showed through and under the app windows
   const end = 0;
   const cy = lerp(Y(610), 700, end), s = lerp(210, 520, end), ar = IMG.badge.height / IMG.badge.width;
   ctx.save(); ctx.scale(S, S); ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 40 * S; ctx.shadowOffsetY = 12 * S;
@@ -122,7 +122,7 @@ function menuBar(ctx, t, IMG) {
   const y = Math.min(Y(0), 0);
   ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(0, y, DW, 50);
   if (IMG.badge) ctx.drawImage(IMG.badge, 22, y + 9, 42, 42 * IMG.badge.height / IMG.badge.width);
-  txt(ctx, 'Finder', 84, y + 34, 26, 700, C.white);
+  txt(ctx, 'CCE', 84, y + 34, 26, 700, C.white);
   ['File', 'Edit', 'View', 'Window'].reduce((x0, w) => { txt(ctx, w, x0, y + 34, 25, 500, C.white); return x0 + w.length * 14 + 34; }, 190);
   // status: wifi, battery, search, clock
   ctx.save(); ctx.strokeStyle = C.white; ctx.fillStyle = C.white; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
@@ -461,7 +461,7 @@ function endCard(ctx, t) {
 // the 800 club; a seasoned banker from a database of 9,500+ banks; smart capital, ongoing; every 6 months, per person, for life.
 function banner(ctx, t, tIn, tOut, title, body, iconIdx) {
   const nIn = P(t, tIn, tIn + 0.4, E.outBack), nOut = P(t, tOut, tOut + 0.25, E.inCubic); if (nIn <= 0 || nOut >= 1) return;
-  const x = lerp(1120, 510, nIn) + nOut * 620, y = Y(70);
+  const x = lerp(1120, 470, nIn) + nOut * 660, y = Y(70);
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 30 * S; ctx.shadowOffsetY = 10 * S; ctx.fillStyle = 'rgba(246,246,248,0.95)'; rrect(ctx, x, y, 540, 124, 30); ctx.fill(); ctx.restore();
   blit(ctx, SPR.dock[iconIdx], x + 62, y + 62, 0.72);
   txt(ctx, title, x + 120, y + 52, 26, 700, C.ink); txt(ctx, body, x + 120, y + 88, 24, 500, '#3A3A3C'); txt(ctx, 'now', x + 515, y + 52, 21, 500, C.grey, 'right');
@@ -526,7 +526,9 @@ function e3(ctx, t) {
   txt(ctx, typed2('4-step framework', t, 8.5, 9.6), 130, Y(300), 30, 500, C.sel, 'left');
   FW.forEach((nm, j) => { const k = clamp(sp(t, 9.0 + j * 0.12, SPRING.bouncy)); const x = 215 + j * 220, y = Y(460), on = t > FWT[j];
     const now = t > FWT[j] && (j === 3 || t < FWT[j + 1]);
-    item(ctx, now ? SPR.folderHot : SPR.folder, nm, x, y, k * (now ? 1.08 : 0.92), now, 1, 170);
+    item(ctx, now ? SPR.folderHot : SPR.folder, '', x, y, k * (now ? 1.08 : 0.92), now, 1, 170);
+    // Finder-style label inside the window: dark text, blue pill when selected
+    if (k > 0.3) { ctx.save(); ctx.font = font(24, 600, UI); const lw = ctx.measureText(nm).width; if (now) { ctx.fillStyle = C.sel; rrect(ctx, x - lw / 2 - 12, y + 108, lw + 24, 36, 8); ctx.fill(); } ctx.restore(); txt(ctx, nm, x, y + 134, 24, 600, now ? '#FFFFFF' : '#1D1D1F', 'center', clamp(k)); }
     if (on) { const kc = clamp(sp(t, FWT[j] + 0.15, SPRING.bouncy)); ctx.save(); ctx.translate(x + 60, y - 70); ctx.scale(kc, kc); ctx.fillStyle = '#34C759'; ctx.beginPath(); ctx.arc(0, 0, 22, 0, TAU); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(-2, 8); ctx.lineTo(10, -8); ctx.stroke(); ctx.restore(); }
   });
   // progress across the four steps
@@ -540,9 +542,9 @@ function e5(ctx, t) {
   if (!widget(ctx, 240, Y(170), 600, 560, i1.k * o1.k, i1.a * o1.a)) return;
   txt(ctx, 'Credit score', 290, Y(250), 32, 600, '#6E6E73', 'left');
   const v = Math.round(lerp(640, 800, P(t, 13.9, 14.8, E.outCubic)));
-  txt(ctx, String(v), 540, Y(470), 170, 700, v >= 800 ? C.sel : '#1D1D1F', 'center');
-  ctx.save(); ctx.strokeStyle = '#E5E5EA'; ctx.lineWidth = 22; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(540, Y(560), 210, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); ctx.strokeStyle = C.sel; ctx.beginPath(); ctx.arc(540, Y(560), 210, Math.PI * 1.1, Math.PI * (1.1 + 0.8 * (v - 300) / 550)); ctx.stroke(); ctx.restore();
-  const kb = clamp(sp(t, 14.85, SPRING.bouncy)); if (kb > 0.01) { ctx.save(); ctx.translate(540, Y(620)); ctx.scale(kb, kb); ctx.fillStyle = '#CB9938'; rrect(ctx, -150, -34, 300, 68, 34); ctx.fill(); txt(ctx, '800 CLUB', 0, 14, 36, 700, '#fff', 'center'); ctx.restore(); }
+  txt(ctx, String(v), 540, Y(560), 120, 700, v >= 800 ? C.sel : '#1D1D1F', 'center');
+  ctx.save(); ctx.strokeStyle = '#E5E5EA'; ctx.lineWidth = 22; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(540, Y(580), 200, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); ctx.strokeStyle = C.sel; ctx.beginPath(); ctx.arc(540, Y(580), 200, Math.PI * 1.1, Math.PI * (1.1 + 0.8 * (v - 300) / 550)); ctx.stroke(); ctx.restore();
+  const kb = clamp(sp(t, 14.85, SPRING.bouncy)); if (kb > 0.01) { ctx.save(); ctx.translate(540, Y(660)); ctx.scale(kb, kb); ctx.fillStyle = '#CB9938'; rrect(ctx, -150, -34, 300, 68, 34); ctx.fill(); txt(ctx, '800 CLUB', 0, 14, 36, 700, '#fff', 'center'); ctx.restore(); }
   ctx.restore();
 }
 // e6 15.8-20.9: connect with a seasoned banker: Contacts finds "Banker"; a Maps window fills with pins while a counter runs to 9,500+
@@ -558,7 +560,7 @@ function e6(ctx, t) {
   if (macWindow(ctx, 70, Y(120), 940, 640, 'Maps', i2.k * o2.k, i2.a * o2.a)) {
     ctx.fillStyle = '#DCE8F3'; ctx.fillRect(72, Y(192), 936, 566);
     const r = mulberry32(17), n = Math.floor(80 * P(t, 18.4, 20.4, E.inOutSine));
-    for (let j = 0; j < 80; j++) { const x = 140 + r() * 800, y = Y(250 + r() * 470); if (j >= n) continue; const k = clamp(sp(t, 18.4 + j * 0.025, SPRING.bouncy)); ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.fillStyle = j % 7 ? C.sel : C.red; ctx.beginPath(); ctx.arc(0, -18, 12, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.moveTo(-8, -12); ctx.lineTo(0, 0); ctx.lineTo(8, -12); ctx.fill(); ctx.restore(); }
+    for (let j = 0; j < 80; j++) { const x = 140 + r() * 800, y0 = 250 + r() * 470, y = Y(y0); if (j >= n || (x > 560 && y0 < 330)) continue; /* keep pins clear of the counter */ const k = clamp(sp(t, 18.4 + j * 0.025, SPRING.bouncy)); ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.fillStyle = j % 7 ? C.sel : C.red; ctx.beginPath(); ctx.arc(0, -18, 12, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.moveTo(-8, -12); ctx.lineTo(0, 0); ctx.lineTo(8, -12); ctx.fill(); ctx.restore(); }
     const v = Math.round(lerp(0, 9500, P(t, 19.2, 20.5, E.outCubic)));
     ctx.fillStyle = 'rgba(255,255,255,0.94)'; rrect(ctx, 600, Y(210), 380, 96, 20); ctx.fill(); txt(ctx, `${v.toLocaleString('en-US')}+ banks`, 960, Y(275), 44, 700, C.sel, 'right', P(t, 19.1, 19.3));
     ctx.restore();
@@ -591,9 +593,9 @@ function e8(ctx, t) {
   const yrs = ['2027', '2028', '2029', '2030'];
   yrs.forEach((y0, r) => { const y = Y(250 + r * 110); txt(ctx, y0, 100, y + 10, 30, 700, '#1D1D1F', 'left'); for (let m = 0; m < 12; m++) { const x = 230 + m * 62; ctx.fillStyle = '#F2F2F7'; rrect(ctx, x, y - 30, 54, 60, 8); ctx.fill(); txt(ctx, MON[m][0], x + 27, y + 10, 22, 500, '#8E8E93', 'center'); }
     [0, 6].forEach((m, q) => { const t0 = 25.0 + (r * 2 + q) * 0.17, k = clamp(sp(t, t0, SPRING.bouncy)); if (k <= 0.01) return; const x = 230 + m * 62; ctx.save(); ctx.translate(x + 27, y); ctx.scale(k, k); ctx.fillStyle = C.sel; rrect(ctx, -27, -30, 54, 60, 8); ctx.fill(); txt(ctx, MON[m][0], 0, 10, 22, 700, '#fff', 'center'); ctx.restore(); }); });
-  txt(ctx, 'Every 6 months · per person · for life', 540, Y(700), 30, 600, C.sel, 'center', P(t, 25.6, 25.9));
+  txt(ctx, 'Every 6 months · per person · for life', 540, Y(700), 30, 600, C.sel, 'center', P(t, 25.6, 25.9) * (1 - P(t, 26.85, 27.0)));
   // "you won't need to depend on anyone"
-  const kd = P(t, 27.0, 27.2); if (kd > 0.01) { ctx.save(); ctx.globalAlpha *= kd; ctx.fillStyle = 'rgba(255,255,255,0.97)'; rrect(ctx, 280, Y(560), 520, 100, 20); ctx.fill(); txt(ctx, 'Depend on anyone', 310, Y(620), 30, 600, '#1D1D1F', 'left'); toggle(ctx, 690, Y(610), 1 - P(t, 27.5, 27.75, E.outBack)); ctx.restore(); }
+  const kd = P(t, 27.0, 27.2); if (kd > 0.01) { ctx.save(); ctx.globalAlpha *= kd; ctx.fillStyle = '#FBFBFD'; ctx.fillRect(80, Y(660), 920, 90); ctx.fillStyle = '#E5E5EA'; ctx.fillRect(100, Y(662), 880, 2); txt(ctx, 'Depend on anyone', 120, Y(718), 30, 600, '#1D1D1F', 'left'); toggle(ctx, 880, Y(708), 1 - P(t, 27.5, 27.75, E.outBack)); ctx.restore(); }
   ctx.restore();
 }
 // e9 28.4-33.2: what's possible for you, your family, your finances, and so much more: Photos albums appear one by one
@@ -687,7 +689,8 @@ M.film({
     wallpaper(ctx, t, IMG);
     ctx.save(); ctx.scale(S, S);
     menuBar(ctx, t, IMG);
-    { const m = 1 + 0.06 * clamp(1 - fh / SEAM);   // desktop windows are already wide: grow only a little so they stay off the frame edges ctx.save(); ctx.translate(540, 960); ctx.scale(m, m); ctx.translate(-540, -960);
+    { const m = 1 + 0.06 * clamp(1 - fh / SEAM); ctx.save();   /* desktop windows are already wide: grow only a little so they stay off the frame edges */
+      ctx.translate(540, 960); ctx.scale(m, m); ctx.translate(-540, -960);
     e1(ctx, t); e2(ctx, t); e3(ctx, t); e5(ctx, t); e6(ctx, t); e7(ctx, t); e8(ctx, t); e9(ctx, t); e10(ctx, t); ctx.restore(); }
     dock(ctx, t);
     pointer(ctx, t);
