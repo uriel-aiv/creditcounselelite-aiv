@@ -6,8 +6,13 @@
 import * as M from './lib/motion.js';
 import * as BR from './lib/brand.js';
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
+const mergeGeometries = (arr) => mergeRaw(arr.map((g) => (g.index ? g.toNonIndexed() : g)));
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const { W, H, E, prog, clamp, lerp, spring, springKeys, SPRING, wobble, font, mulberry32, cover, rrect } = M;
 const DW = 1080, DH = 1920, S = W / DW, TAU = M.TAU;
@@ -30,7 +35,10 @@ const P = (t, a, b, ease = E.inOutCubic) => ease(prog(t, a, b));
 const antic = (t, t0, dur = 0.2) => { const p = prog(t, t0 - dur, t0 + 0.02); return p > 0 && p < 1 ? Math.sin(Math.PI * p) : 0; };
 const outK = (t, t0, d = 0.3) => 1 - E.inBack(prog(t, t0, t0 + d), 1.9);
 let FH = DH;
-const Y = (y) => (FH >= SEAM ? y - (FH - SEAM) : y + (SEAM - FH) * 0.48);
+// motion-only (FH < SEAM): the brick panel grows and centres itself in the frame instead of sliding off the bottom
+const PK = () => clamp(1 - FH / SEAM), PMS = () => 1 + 0.3 * PK(), PYO = () => PK() * (DH - PANEL_H * PMS()) / 2;
+const Y = (y) => (FH >= SEAM ? y - (FH - SEAM) : PYO() + y * PMS());
+const PX = (x) => DW / 2 + (x - DW / 2) * (FH >= SEAM ? 1 : PMS());
 // a drop-in: height above the landing spot (with one bounce) and a squash factor
 function drop(t, t0, h = 6) {
   if (t < t0 - 0.35) return { y: h + 20, sq: 0, vis: false };
@@ -40,19 +48,27 @@ function drop(t, t0, h = 6) {
 }
 
 // ------------------------------------------------------------------ bricks
-const COL = { red: 0x8A0A0A, teal: 0x00A3AE, blue: 0x0052C2, yellow: 0xE0A93A, white: 0xE6E2D8, green: 0x266235, black: 0x23292E, brown: 0x7C4A26, tan: 0xE6CF98, gold: 0xCB9938, sky: 0xADC8E3, navy: 0x114BA7, line: 0x8E959C, silver: 0xC9CDD2, pale: 0xB9D3EC };
+const COL = { red: 0xC4161C, teal: 0x00A3AE, blue: 0x0A57D1, yellow: 0xFFC81F, white: 0xE6E2D8, green: 0x266235, black: 0x23292E, brown: 0x7C4A26, tan: 0xE6CF98, gold: 0xCB9938, sky: 0xADC8E3, navy: 0x114BA7, line: 0x8E959C, silver: 0xC9CDD2, pale: 0xB9D3EC };
 const MAT = {}, GEO = {};
-function mat(c) { return MAT[c] || (MAT[c] = new THREE.MeshStandardMaterial({ color: COL[c] ?? c, roughness: 0.42, metalness: 0, envMapIntensity: 0.18 })); }
-// w x d studs, h (1.2 brick, 0.4 plate); origin at bottom centre
+// ABS plastic: glossy clearcoat over a slightly rough base; gold reads as metallic-flake plastic
+function mat(c) {
+  if (MAT[c]) return MAT[c];
+  const metal = c === 'gold' || c === 'silver';
+  return (MAT[c] = new THREE.MeshPhysicalMaterial({ color: COL[c] ?? c, roughness: metal ? 0.3 : 0.3, metalness: metal ? 0.55 : 0, clearcoat: 1.0, clearcoatRoughness: 0.08, envMapIntensity: 1.25, specularIntensity: 0.9 }));
+}
+// stud: lathe profile with a rounded top edge, like a moulded stud
+const STUD = new THREE.LatheGeometry([[0, 0], [0.3, 0], [0.3, 0.17], [0.292, 0.205], [0.272, 0.222], [0.24, 0.228], [0, 0.228]].map(([x, y]) => new THREE.Vector2(x, y)), 32);
+// w x d studs, h (1.2 brick, 0.4 plate); origin at bottom centre; rounded edges + a hairline gap so neighbours read as separate parts
 function geo(w, d, h = 1.2, studs = true) {
   const key = `${w}x${d}x${h}${studs}`; if (GEO[key]) return GEO[key];
-  const g = [new THREE.BoxGeometry(w - 0.04, h, d - 0.04).translate(0, h / 2, 0)];
-  if (studs) for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) g.push(new THREE.CylinderGeometry(0.3, 0.3, 0.22, 16).translate(i + 0.5 - w / 2, h + 0.11, j + 0.5 - d / 2));
+  const r = Math.min(0.06, h * 0.2);
+  const g = [new RoundedBoxGeometry(w - 0.05, h - 0.02, d - 0.05, 3, r).translate(0, h / 2, 0)];
+  if (studs) for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) g.push(STUD.clone().translate(i + 0.5 - w / 2, h - 0.02, j + 0.5 - d / 2));
   return (GEO[key] = mergeGeometries(g));
 }
 function roundGeo(r, h = 1.2) {
   const key = `r${r}x${h}`; if (GEO[key]) return GEO[key];
-  return (GEO[key] = mergeGeometries([new THREE.CylinderGeometry(r - 0.02, r - 0.02, h, 28).translate(0, h / 2, 0), new THREE.CylinderGeometry(0.3, 0.3, 0.22, 16).translate(0, h + 0.11, 0)]));
+  return (GEO[key] = mergeGeometries([new THREE.LatheGeometry([[0, 0], [r - 0.05, 0], [r - 0.025, 0.01], [r - 0.02, 0.04], [r - 0.02, h - 0.05], [r - 0.03, h - 0.015], [r - 0.06, h], [0, h]].map(([x, y]) => new THREE.Vector2(x, y)), 40), STUD.clone().translate(0, h, 0)]));
 }
 const B = (w, d, c, h = 1.2, studs = true) => new THREE.Mesh(geo(w, d, h, studs), mat(c));
 const R = (r, c, h = 1.2) => new THREE.Mesh(roundGeo(r, h), mat(c));
@@ -62,7 +78,7 @@ function tileOn(g, W, D, x0, z0, w, d, c) { const m = B(w, d, c, 0.4, false); m.
 function cardModel(c, open = 'coin') {
   const g = new THREE.Group(); g.add(B(6, 4, c, 0.4, true));
   const stripe = c === 'white' || c === 'yellow' ? 'silver' : 'white';
-  tileOn(g, 6, 4, 0, 1, 2, 2, 'yellow');            // chip
+  tileOn(g, 6, 4, 0, 1, 2, 2, 'gold');              // chip (metallic)
   tileOn(g, 6, 4, 0, 0, 2, 1, c); tileOn(g, 6, 4, 0, 3, 2, 1, c);
   if (open === 'stack') {                             // 2x2 studs open at cells x3-4, z1-2 for the credit stack
     tileOn(g, 6, 4, 2, 0, 1, 4, c); tileOn(g, 6, 4, 5, 0, 1, 4, c);
@@ -94,22 +110,57 @@ function sunModel() {
   });
   return g;
 }
+// a proper brick bank: green baseplate, three white steps, four fluted columns (stacked round 1x1s with a capital plate),
+// an entablature, a stepped navy pediment and a gold coin medallion in the gable
+function bankModel() {
+  // every part sits on the stud grid: even-width parts centre on whole units, odd-width on half units; heights are plates (0.4) / bricks (1.2)
+  const g = new THREE.Group(), at = (m, x, y, z) => { m.position.set(x, y, z); g.add(m); return m; };
+  at(B(10, 8, 'green', 0.4), 0, 0, 0);                                         // baseplate
+  at(B(8, 6, 'white', 0.4), 0, 0.4, 0);                                       // three steps, each one stud deeper back
+  at(B(8, 5, 'white', 0.4), 0, 0.8, -0.5);
+  at(B(8, 4, 'white', 0.4), 0, 1.2, -1);
+  for (let k = 0; k < 3; k++) at(B(8, 1, 'tan', 1.2), 0, 1.6 + k * 1.2, -2.5); // back wall: three 8x1 bricks + a plate
+  at(B(8, 1, 'tan', 0.4), 0, 5.2, -2.5);
+  [-3.5, -1.5, 1.5, 3.5].forEach((x) => { for (let k = 0; k < 3; k++) at(R(0.5, 'white', 1.2), x, 1.6 + k * 1.2, -0.5); at(R(0.5, 'white', 0.4), x, 5.2, -0.5); });   // round 1x1 columns
+  at(B(8, 4, 'white', 0.4), 0, 5.6, -1);                                      // entablature plate across columns + wall
+  at(B(8, 4, 'navy', 0.4), 0, 6.0, -1); at(B(6, 4, 'navy', 0.4), 0, 6.4, -1); at(B(4, 4, 'navy', 0.4), 0, 6.8, -1); at(B(2, 4, 'navy', 0.4), 0, 7.2, -1);   // stepped roof
+  at(R(1.0, 'gold', 0.4), 0, 7.6, -1);                                        // round 2x2 gold coin on the ridge
+  return g;
+}
 // set a mesh/group from scalar params (pure)
 function put(o, x, y, z, s = 1, ry = 0, sq = 0, rx = 0, rz = 0) {
   o.visible = s > 0.002; o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.scale.set(s * (1 + sq), s * (1 - sq), s * (1 + sq));
 }
 
 // ------------------------------------------------------------------ the 3-D world (built once)
-let RD, SCN, CAM, GLC, G = {};
+let RD, SCN, CAM, GLC, G = {}, AOC, COMP, AO;
 function buildWorld() {
   GLC = document.createElement('canvas'); GLC.width = W; GLC.height = Math.round(PANEL_H * S);
   RD = new THREE.WebGLRenderer({ canvas: GLC, antialias: true, alpha: true, preserveDrawingBuffer: true });
   RD.setPixelRatio(1); RD.setSize(GLC.width, GLC.height, false); RD.outputColorSpace = THREE.SRGBColorSpace;
-  SCN = new THREE.Scene(); SCN.environment = new THREE.PMREMGenerator(RD).fromScene(new RoomEnvironment(), 0.04).texture;
-  SCN.add(new THREE.HemisphereLight(0xffffff, 0x9a8c74, 0.7));
-  const key = new THREE.DirectionalLight(0xfff3e6, 2.8); key.position.set(-6, 12, 8); SCN.add(key);
-  const rim = new THREE.DirectionalLight(0xdfe8ff, 0.7); rim.position.set(8, 5, -6); SCN.add(rim);
+  RD.toneMapping = THREE.NeutralToneMapping; RD.toneMappingExposure = 0.92;
+  RD.shadowMap.enabled = true; RD.shadowMap.type = THREE.VSMShadowMap;
+  SCN = new THREE.Scene(); SCN.environment = new THREE.PMREMGenerator(RD).fromScene(new RoomEnvironment(), 0.03).texture;
+  SCN.add(new THREE.HemisphereLight(0xfff8ee, 0x8a7c66, 0.55));
+  // key: a large soft sun from top-left-front, casting the main shadow onto the paper
+  const key = new THREE.DirectionalLight(0xfff1df, 2.6); key.position.set(-6, 34, 7); key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 1, far: 90 });
+  key.shadow.radius = 7; key.shadow.blurSamples = 20; key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; SCN.add(key); SCN.add(key.target);
+  RectAreaLightUniformsLib.init();
+  const soft = new THREE.RectAreaLight(0xffffff, 3.2, 40, 24); soft.position.set(-6, 22, 18); soft.lookAt(0, 0, 0); SCN.add(soft);
+  const fill = new THREE.DirectionalLight(0xe4ecff, 0.55); fill.position.set(16, 8, 10); SCN.add(fill);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.9); rim.position.set(6, 10, -16); SCN.add(rim);
+  // shadow catcher: transparent ground that only shows shadows on the paper
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ color: 0x3a2a14, opacity: 0.5 }));
+  ground.receiveShadow = true; ground.userData.keep = true; SCN.add(ground);
   CAM = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 400);
+  // ambient occlusion pass (rendered on its own, multiplied over the bricks + paper for crevice and contact shading)
+  AOC = document.createElement('canvas'); AOC.width = GLC.width; AOC.height = GLC.height;
+  COMP = new EffectComposer(RD); COMP.setSize(GLC.width, GLC.height);
+  AO = new GTAOPass(SCN, CAM, GLC.width, GLC.height); AO.output = GTAOPass.OUTPUT.Denoise;
+  AO.updateGtaoMaterial({ radius: 1.1, distanceExponent: 1.4, thickness: 2.0, scale: 1.0, samples: 16, distanceFallOff: 1.0 });
+  AO.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+  COMP.addPass(AO);
   const add = (name, o) => { SCN.add(o); return o; };
   // B1: card + credit stack -> bank baseplate; sun
   G.card = add('card', cardModel('blue', 'stack'));
@@ -147,19 +198,36 @@ function buildWorld() {
   G.coins21 = Array.from({ length: 21 }, () => add('c21', R(0.6, 'gold', 0.4)));
   // footage test (Video 24): six profile boxes, a card, brick people, an online-store screen
   G.boxes = Array.from({ length: 6 }, (_, i) => add('bx', B(2, 2, i === 5 ? 'yellow' : 'green')));
+  G.boxBase = add('bxb', B(17, 4, 'line', 0.4));   // grey baseplate the six profile bricks plug into
   G.auCard = add('auc', cardModel('blue'));
   // grown-up brick figures: long legs, a torso with a shoulder plate, a smaller head (adult proportions, not toy-kid)
-  G.folk = [['red', 'navy'], ['teal', 'blue'], ['navy', 'black'], ['green', 'navy'], ['white', 'navy']].map(([torso, legs]) => { const g = new THREE.Group(); const l = B(2, 1, legs, 2.4, false); const tb = B(2, 1, torso, 1.6, false); tb.position.y = 2.4; const shp = B(3, 1, torso, 0.4); shp.position.y = 4.0; const hd = R(0.5, 'tan', 0.9); hd.position.y = 4.4; g.add(l, tb, shp, hd); return add('fk', g); });
+  // brick people built the real way: two 2x1 bricks for legs, a 2x1 brick torso, a 4x1 shoulder plate, a 1x2 jumper plate
+  // (one centred stud) and a round 1x1 head on that stud
+  G.folk = [['red', 'navy'], ['teal', 'blue'], ['navy', 'black'], ['green', 'navy'], ['white', 'navy']].map(([torso, legs]) => {
+    const g = new THREE.Group(), at = (m, y) => { m.position.y = y; g.add(m); };
+    at(B(2, 1, legs), 0); at(B(2, 1, legs), 1.2); at(B(2, 1, torso), 2.4); at(B(4, 1, torso, 0.4), 3.6);
+    const jumper = new THREE.Mesh(mergeGeometries([geo(2, 1, 0.4, false), STUD.clone().translate(0, 0.38, 0)]), mat(torso)); at(jumper, 4.0);
+    at(R(0.5, 'tan', 1.2), 4.4); return add('fk', g); });
   G.auMini = [add('am', cardModel('yellow')), add('am', cardModel('white'))];
+  // round 2 (Video 17): two cards, a limit stack of ten bricks, a phone-call ring
+  G.cA = add('ca', cardModel('red', 'stack')); G.cB = add('cb', cardModel('blue', 'stack'));
+  G.lim = Array.from({ length: 10 }, () => add('lm', B(2, 2, 'yellow', 0.4)));   // 2x2 plates
+  G.callBank = add('cbk', bankModel());
   G.fixY = add('fy', B(2, 2, 'yellow')); G.fixG = add('fg', B(2, 2, 'green'));
-  G.screen = add('scr', (() => { const g = new THREE.Group(); g.add(B(6, 1, 'black', 1.2)); const sc = B(6, 1, 'black', 3.6, false); sc.position.set(0, 1.2, -0.0); g.add(sc); const fc = B(5, 0.2, 'blue', 2.8, false); fc.position.set(0, 1.6, 0.5); g.add(fc); return g; })());
+  // a monitor as a brick wall: black 6x1 frame rows, the screen rows = black 1x1 + blue 4x1 + black 1x1, on a 6x2 black plate
+  G.screen = add('scr', (() => { const g = new THREE.Group(), at = (m, x, y) => { m.position.set(x, y, 0); g.add(m); };
+    at(B(6, 2, 'black', 0.4), 0, 0); at(B(6, 1, 'black'), 0, 0.4);
+    for (let r = 0; r < 3; r++) { at(B(1, 1, 'black'), -2.5, 1.6 + r * 1.2); at(B(4, 1, 'blue'), 0, 1.6 + r * 1.2); at(B(1, 1, 'black'), 2.5, 1.6 + r * 1.2); }
+    at(B(6, 1, 'black'), 0, 5.2); return g; })());
+  SCN.traverse((o) => { if (o.isMesh && !o.userData.keep) { o.castShadow = true; o.receiveShadow = true; } });
+  G.sun.traverse((o) => { o.castShadow = false; });
   hideAll();
 }
-const hideAll = () => SCN.children.forEach((o) => { if (!o.isLight) o.visible = false; });
+const hideAll = () => SCN.children.forEach((o) => { if (!o.isLight && !o.userData.keep) o.visible = false; });
 
 // ------------------------------------------------------------------ camera: keyed target/zoom with a spring, extra yaw for orbits
 const rowX = (m) => -18 + (m - 1) * 1.56;
-const CAMK = [[0, [0, 0.6, 0], 1.3], [4.2, [0.6, 0.6, 0], 1.45], [7.2, [0, 1.6, 0], 1.6], [10.6, [0.5, 2.0, -2.6], 1.35], [14.1, [0.5, 2.2, -3.0], 1.3]];
+const CAMK = [[0, [0, 1.6, 0], 1.15], [4.2, [0.6, 1.8, 0], 1.2], [7.2, [0, 2.2, 0], 1.5], [10.6, [-1.2, 3.6, -1.0], 1.1], [14.1, [0.5, 3.0, -2.5], 1.25]];
 function setCamera(t) {
   const v = springKeys(t, CAMK.map(([a, tg, z]) => [a, [...tg, z]]), { stiffness: 55, damping: 13 });
   const yaw = 0.785 + 0.06 * Math.sin(t * 0.35) + 0.5 * P(t, 10.6, 14.0, E.inOutSine);
@@ -172,7 +240,7 @@ function setCamera(t) {
   CAM.updateMatrixWorld();
 }
 const V = new THREE.Vector3();
-function proj(x, y, z) { V.set(x, y, z).project(CAM); return [(V.x + 1) / 2 * DW, Y((1 - V.y) / 2 * PANEL_H)]; }
+function proj(x, y, z) { V.set(x, y, z).project(CAM); return [PX((V.x + 1) / 2 * DW), Y((1 - V.y) / 2 * PANEL_H)]; }
 
 // ------------------------------------------------------------------ beats (each sets its meshes from t)
 const OV = { under: [], over: [] };     // 2-D underlay/overlay jobs computed per frame
@@ -301,30 +369,33 @@ function b7(t) {
 }
 
 
+let DISC = false;
 // ------------------------------------------------------------------ footage test: Video 24 "The authorized-user strategy" (16.6 s)
 // k1 0.9-5.9: all the other boxes are good, but you're in the yellow (mid to lower 700s)
 function k1(t) {
   if (t < 0.85 || t > 6.3) return;
   const k = outK(t, 5.85);
+  { const db = drop(t, 1.05, 6); put(G.boxBase, -0.5, db.y, 0, k * (db.vis ? 1 : 0), 0, db.sq); }
   G.boxes.forEach((m, i) => {
     const tl = i < 5 ? 1.25 + i * 0.09 : 2.55, d = drop(t, tl, 7);
     const shake = i === 5 && t > 4.5 ? 0.12 * Math.sin((t - 4.5) * 30) * Math.exp(-(t - 4.5) * 3) : 0;
-    put(m, -6.25 + i * 2.5, d.y, 0, k * (d.vis ? 1 : 0), shake, d.sq);
-    if (t > tl && t < tl + 0.4) OV.over.push({ type: 'pop', p: [-6.25 + i * 2.5, 1.6, 0], k: prog(t, tl, tl + 0.4), r: i === 5 ? 1.1 : 0.7 });
+    put(m, -8 + i * 3, 0.4 + d.y, 0, k * (d.vis ? 1 : 0), 0, d.sq);   // plugged on the baseplate (no rotation off the studs)
+    if (shake) put(m, -8 + i * 3, 0.4 + Math.abs(shake) * 2, 0, k, 0, d.sq);
+    if (t > tl && t < tl + 0.4) OV.over.push({ type: 'pop', p: [-8 + i * 3, 2.0, 0], k: prog(t, tl, tl + 0.4), r: i === 5 ? 1.1 : 0.7 });
   });
-  if (t > 2.55) OV.under.push({ type: 'burst', p: [6.25, 0.8, 0], r: 150 * clamp(sp(t, 2.55, SPRING.bouncy)) * k, rot: t * 0.3 });
+  if (t > 2.55) OV.under.push({ type: 'burst', p: [7, 1.2, 0], r: 150 * clamp(sp(t, 2.55, SPRING.bouncy)) * k, rot: t * 0.3 });
   if (t > 4.15) OV.over.push({ type: 'big', s: 'MID–LOW 700s', x: 540, y: Y(230), size: 130, align: 'center', k: clamp(sp(t, 4.15, SPRING.bouncy)) * k, hit: t > 5.0 ? t - 5.0 : -1 });
   else if (t > 1.2) OV.over.push({ type: 'big', s: 'YOUR PROFILE', x: 540, y: Y(230), size: 120, align: 'center', k: clamp(sp(t, 1.2, SPRING.bouncy)) * outK(t, 3.95, 0.2), hit: -1 });
 }
 // k3 7.3-16.7: adding authorized users: parents, friends, family; an industry online
-const FOLK = [[-6.4, -2.6, 10.9], [-4.2, -3.0, 11.05], [4.6, -3.0, 12.2], [6.8, -2.6, 12.6]];   // a row standing behind the card
+const FOLK = [[-7.4, 4.1, 10.9], [-5.2, 0.4, 11.05], [-2.0, -4.6, 12.2], [0.8, -8.6, 12.6]];   // a row across the screen, behind-left of the card   // a row standing behind the card
 function k3(t) {
   if (t < 7.2) return;
   const dc = drop(t, 7.45, 7); put(G.auCard, 0, dc.y, 0, dc.vis ? 1.15 : 0, 0.1 * Math.sin(t * 0.6), dc.sq);
   // two users snap onto the card on "authorized users"
   // "authorized users": the account issues two more cards; they slide out from under the parent card, fanned in front
-  [[-3.4, 3.4, -0.35, 8.75], [3.4, 3.6, 0.35, 8.9]].forEach(([x, z, ry, tl], i) => { const u = P(t, tl, tl + 0.45, E.outBack); if (u <= 0.001) return;
-    put(G.auMini[i], lerp(0, x, u), -0.45 + Math.sin(Math.PI * clamp(u)) * 0.8, lerp(0, z, u), 0.62 * outK(t, 10.55, 0.3), lerp(0, ry, u), 0);
+  [[-2.4, 4.4, 0, 8.75], [2.4, 4.4, 0, 8.9]].forEach(([x, z, ry, tl], i) => { const u = P(t, tl, tl + 0.45, E.outBack); if (u <= 0.001) return;
+    put(G.auMini[i], lerp(0, x, u), Math.sin(Math.PI * clamp(u)) * 1.2, lerp(0, z, u), 0.62 * outK(t, 10.55, 0.3), 0, 0);
     if (t > tl + 0.3 && t < tl + 0.7) OV.over.push({ type: 'pop', p: [x, 0.8, z], k: prog(t, tl + 0.3, tl + 0.7), r: 0.6 }); });
   // the payoff: the yellow box from the profile drops in beside the card and turns green
   const dy = drop(t, 9.35, 7), turn = t > 10.0;
@@ -338,7 +409,7 @@ function k3(t) {
   if (t > 8.7) OV.over.push({ type: 'big', s: '+ AUTHORIZED USERS', x: 540, y: Y(200), size: 104, align: 'center', k: clamp(sp(t, 8.7, SPRING.bouncy)) * outK(t, 10.55, 0.25), hit: -1 });
   // parents, friends, family drop in around it; a comet trail runs from each to the card
   FOLK.forEach(([x, z, tl], i) => {
-    const d = drop(t, tl, 7); put(G.folk[i], x, d.y, z, d.vis ? 0.8 * outK(t, 14.05, 0.3) : 0, Math.atan2(-x, -z) * 0.25, d.sq);
+    const d = drop(t, tl, 7); put(G.folk[i], x, d.y, z, d.vis ? 0.8 * outK(t, 14.05, 0.3) : 0, 0, d.sq);
     const tr = P(t, tl + 0.15, tl + 0.75, E.inOutSine);
     if (t > tl + 0.1 && t < tl + 1.1) OV.over.push({ type: 'trail', fn: (u) => [lerp(x, 0, u), 1.5 + Math.sin(Math.PI * u) * 3, lerp(z, 0, u)], p: tr, q: P(t, tl + 0.3, tl + 0.95, E.inOutSine), w: 26 });
   });
@@ -413,7 +484,7 @@ let CAPS = [];
 function buildCaptions(words) {
   const fix = [];
   for (let i = 0; i < words.length; i++) {
-    let [a, b, w] = words[i]; if (!w || !w.trim()) continue;
+    let [a, b, w] = words[i]; if (!w || !w.trim()) continue; w = w.replace(/\$/g, '');
     if (/^,\d/.test(w) && fix.length) { fix[fix.length - 1][2] += w; fix[fix.length - 1][1] = b; continue; }
     if (w === 'processing') w = 'process';
     if (w === 'extra' && fix.length && fix[fix.length - 1][2] === '21') { fix[fix.length - 1][2] = '21x'; continue; }
@@ -479,7 +550,7 @@ M.film({
   images: { badge: 'assets/badge.png' },
   hits: HITS,
   samples: (t) => (near(t) ? 6 : 2),
-  async init() { buildTextures(); buildWorld(); CAPS = buildCaptions(await fetch('assets/words.json').then((r) => r.json())); },
+  async init() { const _t0 = performance.now(); buildTextures(); buildWorld(); RD.compile(SCN, CAM); CAPS = buildCaptions(await fetch('assets/words.json').then((r) => r.json())); },
   prepare: (t) => loadFrame(t),
   draw(ctx, u, t, IMG) {
     const fh = footH(t); FH = fh;
@@ -494,10 +565,12 @@ M.film({
       k1(t); k3(t);
       if (G.sun.userData.on) { const u = G.sun.userData; G.sun.quaternion.copy(CAM.quaternion); G.sun.rotateZ(u.spin); G.sun.scale.setScalar(Math.max(0.001, u.k)); G.sun.visible = u.k > 0.002; }
       overlays(ctx, OV.under);
+      RD.setClearColor(0xffffff, 1); COMP.render(); const aoc = AOC.getContext('2d'); aoc.clearRect(0, 0, AOC.width, AOC.height); aoc.drawImage(GLC, 0, 0);
       RD.setClearColor(0x000000, 0); RD.render(SCN, CAM);
-      const py = Y(0);
-      ctx.save(); ctx.globalAlpha = 0.16; ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(GLC, 5, py - 3, DW, PANEL_H); ctx.restore();   // misregistration ghost
-      ctx.save(); ctx.filter = 'saturate(1.45) contrast(1.06)'; ctx.drawImage(GLC, 0, py, DW, PANEL_H); ctx.restore();
+      const py = Y(0), pm = FH >= SEAM ? 1 : PMS(), px = PX(0), pw = DW * pm, ph = PANEL_H * pm;
+      ctx.save(); ctx.globalAlpha = 0.1; ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(GLC, px + 4, py - 2, pw, ph); ctx.restore();   // light misregistration ghost
+      ctx.save(); ctx.filter = 'saturate(1.35) contrast(1.06)'; ctx.drawImage(GLC, px, py, pw, ph); ctx.restore();
+      ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.85; ctx.drawImage(AOC, px, py, pw, ph); ctx.restore();
       overlays(ctx, OV.over);
     }
     // end card on the paper
@@ -510,7 +583,7 @@ M.film({
       if (t > 57.7) { ctx.save(); ctx.globalAlpha = P(t, 57.7, 58.0); ctx.font = font(40, 700, UI); const w = ctx.measureText('creditcounselelite.com').width + 140; const x0 = 540 - w / 2, y = 1360; ctx.fillStyle = C.yellow; rrect(ctx, x0 + 38, y - 44, w - 76, 88, 26); ctx.fill(); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText('creditcounselelite.com', 540, y + 14); ctx.restore(); }
       ctx.save(); ctx.globalAlpha = P(t, 58.0, 58.4) * 0.7; ctx.font = font(22, 700, UI); ctx.textAlign = 'center'; ctx.fillStyle = C.ink; ctx.fillText('Education and coaching. Not a lender. Individual results vary.', 540, 1680); ctx.restore();
     }
-    if (false) { ctx.save(); ctx.font = font(22, 700, UI); ctx.fillStyle = 'rgba(21,21,21,0.6)'; ctx.fillText('individual results vary. education only.', 40, Y(50)); ctx.restore(); }
+    if (DISC && fh < DH - 4) { ctx.save(); ctx.font = font(22, 700, UI); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(21,21,21,0.65)'; ctx.fillText('Individual results vary. Education only.', 540, Y(955)); ctx.restore(); }
     // footage below
     if (FOOT && fh > 1) {
       cover(ctx, FOOT, 0, DH - fh, DW, fh, { fx: 0.5, fy: lerp(0.25, 0.45, clamp((fh - SEAM) / (DH - SEAM))), zoom: pushIn(t) });
@@ -525,8 +598,8 @@ M.film({
     const top = Math.max(0, (DH - FH) * S);
     if (top <= 0) return;
     ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, top); ctx.clip();
-    ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(GRAIN[Math.floor(t * 12) % 3], 0, 0);
-    ctx.globalAlpha = 0.12; ctx.drawImage(DOTS, 0, 0);
+    ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.55; ctx.drawImage(GRAIN[Math.floor(t * 12) % 3], 0, 0); ctx.globalAlpha = 1;
+    ctx.globalAlpha = 0.05; ctx.drawImage(DOTS, 0, 0);
     ctx.restore();
   },
 });

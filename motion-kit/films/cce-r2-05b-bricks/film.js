@@ -6,8 +6,13 @@
 import * as M from './lib/motion.js';
 import * as BR from './lib/brand.js';
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
+const mergeGeometries = (arr) => mergeRaw(arr.map((g) => (g.index ? g.toNonIndexed() : g)));
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const { W, H, E, prog, clamp, lerp, spring, springKeys, SPRING, wobble, font, mulberry32, cover, rrect } = M;
 const DW = 1080, DH = 1920, S = W / DW, TAU = M.TAU;
@@ -30,7 +35,10 @@ const P = (t, a, b, ease = E.inOutCubic) => ease(prog(t, a, b));
 const antic = (t, t0, dur = 0.2) => { const p = prog(t, t0 - dur, t0 + 0.02); return p > 0 && p < 1 ? Math.sin(Math.PI * p) : 0; };
 const outK = (t, t0, d = 0.3) => 1 - E.inBack(prog(t, t0, t0 + d), 1.9);
 let FH = DH;
-const Y = (y) => (FH >= SEAM ? y - (FH - SEAM) : y + (SEAM - FH) * 0.48);
+// motion-only (FH < SEAM): the brick panel grows and centres itself in the frame instead of sliding off the bottom
+const PK = () => clamp(1 - FH / SEAM), PMS = () => 1 + 0.3 * PK(), PYO = () => PK() * (DH - PANEL_H * PMS()) / 2;
+const Y = (y) => (FH >= SEAM ? y - (FH - SEAM) : PYO() + y * PMS());
+const PX = (x) => DW / 2 + (x - DW / 2) * (FH >= SEAM ? 1 : PMS());
 // a drop-in: height above the landing spot (with one bounce) and a squash factor
 function drop(t, t0, h = 6) {
   if (t < t0 - 0.35) return { y: h + 20, sq: 0, vis: false };
@@ -40,19 +48,27 @@ function drop(t, t0, h = 6) {
 }
 
 // ------------------------------------------------------------------ bricks
-const COL = { red: 0x8A0A0A, teal: 0x00A3AE, blue: 0x0052C2, yellow: 0xE0A93A, white: 0xE6E2D8, green: 0x266235, black: 0x23292E, brown: 0x7C4A26, tan: 0xE6CF98, gold: 0xCB9938, sky: 0xADC8E3, navy: 0x114BA7, line: 0x8E959C, silver: 0xC9CDD2, pale: 0xB9D3EC };
+const COL = { red: 0xC4161C, teal: 0x00A3AE, blue: 0x0A57D1, yellow: 0xFFC81F, white: 0xE6E2D8, green: 0x266235, black: 0x23292E, brown: 0x7C4A26, tan: 0xE6CF98, gold: 0xCB9938, sky: 0xADC8E3, navy: 0x114BA7, line: 0x8E959C, silver: 0xC9CDD2, pale: 0xB9D3EC };
 const MAT = {}, GEO = {};
-function mat(c) { return MAT[c] || (MAT[c] = new THREE.MeshStandardMaterial({ color: COL[c] ?? c, roughness: 0.42, metalness: 0, envMapIntensity: 0.18 })); }
-// w x d studs, h (1.2 brick, 0.4 plate); origin at bottom centre
+// ABS plastic: glossy clearcoat over a slightly rough base; gold reads as metallic-flake plastic
+function mat(c) {
+  if (MAT[c]) return MAT[c];
+  const metal = c === 'gold' || c === 'silver';
+  return (MAT[c] = new THREE.MeshPhysicalMaterial({ color: COL[c] ?? c, roughness: metal ? 0.3 : 0.3, metalness: metal ? 0.55 : 0, clearcoat: 1.0, clearcoatRoughness: 0.08, envMapIntensity: 1.25, specularIntensity: 0.9 }));
+}
+// stud: lathe profile with a rounded top edge, like a moulded stud
+const STUD = new THREE.LatheGeometry([[0, 0], [0.3, 0], [0.3, 0.17], [0.292, 0.205], [0.272, 0.222], [0.24, 0.228], [0, 0.228]].map(([x, y]) => new THREE.Vector2(x, y)), 32);
+// w x d studs, h (1.2 brick, 0.4 plate); origin at bottom centre; rounded edges + a hairline gap so neighbours read as separate parts
 function geo(w, d, h = 1.2, studs = true) {
   const key = `${w}x${d}x${h}${studs}`; if (GEO[key]) return GEO[key];
-  const g = [new THREE.BoxGeometry(w - 0.04, h, d - 0.04).translate(0, h / 2, 0)];
-  if (studs) for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) g.push(new THREE.CylinderGeometry(0.3, 0.3, 0.22, 16).translate(i + 0.5 - w / 2, h + 0.11, j + 0.5 - d / 2));
+  const r = Math.min(0.06, h * 0.2);
+  const g = [new RoundedBoxGeometry(w - 0.05, h - 0.02, d - 0.05, 3, r).translate(0, h / 2, 0)];
+  if (studs) for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) g.push(STUD.clone().translate(i + 0.5 - w / 2, h - 0.02, j + 0.5 - d / 2));
   return (GEO[key] = mergeGeometries(g));
 }
 function roundGeo(r, h = 1.2) {
   const key = `r${r}x${h}`; if (GEO[key]) return GEO[key];
-  return (GEO[key] = mergeGeometries([new THREE.CylinderGeometry(r - 0.02, r - 0.02, h, 28).translate(0, h / 2, 0), new THREE.CylinderGeometry(0.3, 0.3, 0.22, 16).translate(0, h + 0.11, 0)]));
+  return (GEO[key] = mergeGeometries([new THREE.LatheGeometry([[0, 0], [r - 0.05, 0], [r - 0.025, 0.01], [r - 0.02, 0.04], [r - 0.02, h - 0.05], [r - 0.03, h - 0.015], [r - 0.06, h], [0, h]].map(([x, y]) => new THREE.Vector2(x, y)), 40), STUD.clone().translate(0, h, 0)]));
 }
 const B = (w, d, c, h = 1.2, studs = true) => new THREE.Mesh(geo(w, d, h, studs), mat(c));
 const R = (r, c, h = 1.2) => new THREE.Mesh(roundGeo(r, h), mat(c));
@@ -62,7 +78,7 @@ function tileOn(g, W, D, x0, z0, w, d, c) { const m = B(w, d, c, 0.4, false); m.
 function cardModel(c, open = 'coin') {
   const g = new THREE.Group(); g.add(B(6, 4, c, 0.4, true));
   const stripe = c === 'white' || c === 'yellow' ? 'silver' : 'white';
-  tileOn(g, 6, 4, 0, 1, 2, 2, 'yellow');            // chip
+  tileOn(g, 6, 4, 0, 1, 2, 2, 'gold');              // chip
   tileOn(g, 6, 4, 0, 0, 2, 1, c); tileOn(g, 6, 4, 0, 3, 2, 1, c);
   if (open === 'stack') {                             // 2x2 studs open at cells x3-4, z1-2 for the credit stack
     tileOn(g, 6, 4, 2, 0, 1, 4, c); tileOn(g, 6, 4, 5, 0, 1, 4, c);
@@ -94,22 +110,57 @@ function sunModel() {
   });
   return g;
 }
+// a proper brick bank: green baseplate, three white steps, four fluted columns (stacked round 1x1s with a capital plate),
+// an entablature, a stepped navy pediment and a gold coin medallion in the gable
+function bankModel() {
+  // every part sits on the stud grid: even-width parts centre on whole units, odd-width on half units; heights are plates (0.4) / bricks (1.2)
+  const g = new THREE.Group(), at = (m, x, y, z) => { m.position.set(x, y, z); g.add(m); return m; };
+  at(B(10, 8, 'green', 0.4), 0, 0, 0);                                         // baseplate
+  at(B(8, 6, 'white', 0.4), 0, 0.4, 0);                                       // three steps, each one stud deeper back
+  at(B(8, 5, 'white', 0.4), 0, 0.8, -0.5);
+  at(B(8, 4, 'white', 0.4), 0, 1.2, -1);
+  for (let k = 0; k < 3; k++) at(B(8, 1, 'tan', 1.2), 0, 1.6 + k * 1.2, -2.5); // back wall: three 8x1 bricks + a plate
+  at(B(8, 1, 'tan', 0.4), 0, 5.2, -2.5);
+  [-3.5, -1.5, 1.5, 3.5].forEach((x) => { for (let k = 0; k < 3; k++) at(R(0.5, 'white', 1.2), x, 1.6 + k * 1.2, -0.5); at(R(0.5, 'white', 0.4), x, 5.2, -0.5); });   // round 1x1 columns
+  at(B(8, 4, 'white', 0.4), 0, 5.6, -1);                                      // entablature plate across columns + wall
+  at(B(8, 4, 'navy', 0.4), 0, 6.0, -1); at(B(6, 4, 'navy', 0.4), 0, 6.4, -1); at(B(4, 4, 'navy', 0.4), 0, 6.8, -1); at(B(2, 4, 'navy', 0.4), 0, 7.2, -1);   // stepped roof
+  at(R(1.0, 'gold', 0.4), 0, 7.6, -1);                                        // round 2x2 gold coin on the ridge
+  return g;
+}
 // set a mesh/group from scalar params (pure)
 function put(o, x, y, z, s = 1, ry = 0, sq = 0, rx = 0, rz = 0) {
   o.visible = s > 0.002; o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.scale.set(s * (1 + sq), s * (1 - sq), s * (1 + sq));
 }
 
 // ------------------------------------------------------------------ the 3-D world (built once)
-let RD, SCN, CAM, GLC, G = {};
+let RD, SCN, CAM, GLC, G = {}, AOC, COMP, AO;
 function buildWorld() {
   GLC = document.createElement('canvas'); GLC.width = W; GLC.height = Math.round(PANEL_H * S);
   RD = new THREE.WebGLRenderer({ canvas: GLC, antialias: true, alpha: true, preserveDrawingBuffer: true });
   RD.setPixelRatio(1); RD.setSize(GLC.width, GLC.height, false); RD.outputColorSpace = THREE.SRGBColorSpace;
-  SCN = new THREE.Scene(); SCN.environment = new THREE.PMREMGenerator(RD).fromScene(new RoomEnvironment(), 0.04).texture;
-  SCN.add(new THREE.HemisphereLight(0xffffff, 0x9a8c74, 0.7));
-  const key = new THREE.DirectionalLight(0xfff3e6, 2.8); key.position.set(-6, 12, 8); SCN.add(key);
-  const rim = new THREE.DirectionalLight(0xdfe8ff, 0.7); rim.position.set(8, 5, -6); SCN.add(rim);
+  RD.toneMapping = THREE.NeutralToneMapping; RD.toneMappingExposure = 0.92;
+  RD.shadowMap.enabled = true; RD.shadowMap.type = THREE.VSMShadowMap;
+  SCN = new THREE.Scene(); SCN.environment = new THREE.PMREMGenerator(RD).fromScene(new RoomEnvironment(), 0.03).texture;
+  SCN.add(new THREE.HemisphereLight(0xfff8ee, 0x8a7c66, 0.55));
+  // key: a large soft sun from top-left-front, casting the main shadow onto the paper
+  const key = new THREE.DirectionalLight(0xfff1df, 2.6); key.position.set(-6, 34, 7); key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 1, far: 90 });
+  key.shadow.radius = 7; key.shadow.blurSamples = 20; key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; SCN.add(key); SCN.add(key.target);
+  RectAreaLightUniformsLib.init();
+  const soft = new THREE.RectAreaLight(0xffffff, 3.2, 40, 24); soft.position.set(-6, 22, 18); soft.lookAt(0, 0, 0); SCN.add(soft);
+  const fill = new THREE.DirectionalLight(0xe4ecff, 0.55); fill.position.set(16, 8, 10); SCN.add(fill);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.9); rim.position.set(6, 10, -16); SCN.add(rim);
+  // shadow catcher: transparent ground that only shows shadows on the paper
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ color: 0x3a2a14, opacity: 0.5 }));
+  ground.receiveShadow = true; ground.userData.keep = true; SCN.add(ground);
   CAM = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 400);
+  // ambient occlusion pass (rendered on its own, multiplied over the bricks + paper for crevice and contact shading)
+  AOC = document.createElement('canvas'); AOC.width = GLC.width; AOC.height = GLC.height;
+  COMP = new EffectComposer(RD); COMP.setSize(GLC.width, GLC.height);
+  AO = new GTAOPass(SCN, CAM, GLC.width, GLC.height); AO.output = GTAOPass.OUTPUT.Denoise;
+  AO.updateGtaoMaterial({ radius: 1.1, distanceExponent: 1.4, thickness: 2.0, scale: 1.0, samples: 16, distanceFallOff: 1.0 });
+  AO.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+  COMP.addPass(AO);
   const add = (name, o) => { SCN.add(o); return o; };
   // B1: card + credit stack -> bank baseplate; sun
   G.card = add('card', cardModel('blue', 'stack'));
@@ -152,14 +203,16 @@ function buildWorld() {
   G.folk = [['red', 'navy'], ['teal', 'blue'], ['navy', 'black'], ['green', 'navy'], ['white', 'navy']].map(([torso, legs]) => { const g = new THREE.Group(); const l = B(2, 1, legs, 2.4, false); const tb = B(2, 1, torso, 1.6, false); tb.position.y = 2.4; const shp = B(3, 1, torso, 0.4); shp.position.y = 4.0; const hd = R(0.5, 'tan', 0.9); hd.position.y = 4.4; g.add(l, tb, shp, hd); return add('fk', g); });
   G.auMini = [add('am', cardModel('yellow')), add('am', cardModel('white'))];
   // round 2 (Video 17): two cards, a limit stack of ten bricks, a phone-call ring
-  G.cA = add('ca', cardModel('red')); G.cB = add('cb', cardModel('blue'));
-  G.lim = Array.from({ length: 10 }, () => add('lm', B(2, 2, 'yellow', 0.6)));
-  G.callBank = add('cbk', (() => { const g = new THREE.Group(); const st = B(6, 3, 'white', 0.4); g.add(st); [-2, -0.7, 0.7, 2].forEach((x) => { const c = R(0.4, 'white', 2.2); c.position.set(x, 0.4, 0); g.add(c); }); const tp = B(6, 3, 'white', 0.4); tp.position.y = 2.6; g.add(tp); const rf = B(4, 2, 'red', 0.8); rf.position.y = 3.0; g.add(rf); return g; })());
+  G.cA = add('ca', cardModel('red', 'stack')); G.cB = add('cb', cardModel('blue', 'stack'));
+  G.lim = Array.from({ length: 10 }, () => add('lm', B(2, 2, 'yellow', 0.4)));   // 2x2 plates
+  G.callBank = add('cbk', bankModel());
   G.fixY = add('fy', B(2, 2, 'yellow')); G.fixG = add('fg', B(2, 2, 'green'));
   G.screen = add('scr', (() => { const g = new THREE.Group(); g.add(B(6, 1, 'black', 1.2)); const sc = B(6, 1, 'black', 3.6, false); sc.position.set(0, 1.2, -0.0); g.add(sc); const fc = B(5, 0.2, 'blue', 2.8, false); fc.position.set(0, 1.6, 0.5); g.add(fc); return g; })());
+  SCN.traverse((o) => { if (o.isMesh && !o.userData.keep) { o.castShadow = true; o.receiveShadow = true; } });
+  G.sun.traverse((o) => { o.castShadow = false; });
   hideAll();
 }
-const hideAll = () => SCN.children.forEach((o) => { if (!o.isLight) o.visible = false; });
+const hideAll = () => SCN.children.forEach((o) => { if (!o.isLight && !o.userData.keep) o.visible = false; });
 
 // ------------------------------------------------------------------ camera: keyed target/zoom with a spring, extra yaw for orbits
 const rowX = (m) => -18 + (m - 1) * 1.56;
@@ -176,7 +229,7 @@ function setCamera(t) {
   CAM.updateMatrixWorld();
 }
 const V = new THREE.Vector3();
-function proj(x, y, z) { V.set(x, y, z).project(CAM); return [(V.x + 1) / 2 * DW, Y((1 - V.y) / 2 * PANEL_H)]; }
+function proj(x, y, z) { V.set(x, y, z).project(CAM); return [PX((V.x + 1) / 2 * DW), Y((1 - V.y) / 2 * PANEL_H)]; }
 
 // ------------------------------------------------------------------ beats (each sets its meshes from t)
 const OV = { under: [], over: [] };     // 2-D underlay/overlay jobs computed per frame
@@ -310,20 +363,21 @@ function b7(t) {
 // combine it: transfer the rest of the limit onto this 0% card. Smart to be able to stack it up."
 let DISC = false;
 // stack slot on a card: brick i of a stack standing on card centre (cx, cz)
-const slot = (cx, cz, i) => [cx + 1.4, 0.4 + i * 0.6, cz];
+// the card's open 2x2 stud patch is cells x3-4, z1-2 -> centre (+1, 0) from the card centre; plates stack 0.4 apart
+const slot = (cx, cz, i) => [cx + 1, 0.4 + i * 0.4, cz];
 function m1(t) {
   // call the bank: the bank builds, rings pulse out of it like a phone ringing
   if (t > 0.7 && t < 3.0) {
     const k = outK(t, 2.6), d = drop(t, 0.95, 7);
-    put(G.callBank, 0, d.y, 0, k * (d.vis ? 1.2 : 0), 0.2, d.sq);
-    for (let i = 0; i < 3; i++) { const f = ((t - 1.0) * 1.2 + i / 3) % 1; if (t > 1.0) OV.over.push({ type: 'pop', p: [0, 4.4, 0], k: f, r: 1.6 }); }
+    put(G.callBank, 1.2, d.y, 3.2, k * (d.vis ? 0.68 : 0), 0.2, d.sq);
+    for (let i = 0; i < 3; i++) { const f = ((t - 1.0) * 1.2 + i / 3) % 1; if (t > 1.0) OV.over.push({ type: 'pop', p: [1.2, 5.6, 2.5], k: f, r: 1.6 }); }
     if (t > 0.9) OV.over.push({ type: 'big', s: 'CALL THE BANK', x: 540, y: Y(200), size: 120, align: 'center', k: clamp(sp(t, 0.9, SPRING.bouncy)) * outK(t, 2.4, 0.2), hit: -1 });
   }
   if (t < 2.4) return;
   // two cards: the old card holds the limit stack; the 0% card waits on the right
   const kA = drop(t, 2.55, 7), kB = drop(t, 2.7, 7);
   const A = [-4.2, 0], Bc = [4.2, 0];
-  put(G.cA, A[0], kA.y, A[1], kA.vis ? 1 : 0, 0.15, kA.sq); put(G.cB, Bc[0], kB.y, Bc[1], kB.vis ? 1 : 0, -0.15, kB.sq);
+  put(G.cA, A[0], kA.y, A[1], kA.vis ? 1 : 0, 0, kA.sq); put(G.cB, Bc[0], kB.y, Bc[1], kB.vis ? 1 : 0, 0, kB.sq);
   // each brick: starts on A (stack 0..9), hops to B: bricks 9..5 on "transfer the limit over" (3.2-4.9),
   // bricks 4..0 on "transfer the rest" (10.1-11.5); B stack grows 0..9; on "stack it up" B bounces and a starburst opens
   for (let i = 0; i < 10; i++) {
@@ -471,7 +525,7 @@ M.film({
   images: { badge: 'assets/badge.png' },
   hits: HITS,
   samples: (t) => (near(t) ? 6 : 2),
-  async init() { buildTextures(); buildWorld(); CAPS = buildCaptions(await fetch('assets/words.json').then((r) => r.json())); },
+  async init() { const _t0 = performance.now(); buildTextures(); buildWorld(); RD.compile(SCN, CAM); CAPS = buildCaptions(await fetch('assets/words.json').then((r) => r.json())); },
   prepare: (t) => loadFrame(t),
   draw(ctx, u, t, IMG) {
     const fh = footH(t); FH = fh;
@@ -486,10 +540,12 @@ M.film({
       m1(t);
       if (G.sun.userData.on) { const u = G.sun.userData; G.sun.quaternion.copy(CAM.quaternion); G.sun.rotateZ(u.spin); G.sun.scale.setScalar(Math.max(0.001, u.k)); G.sun.visible = u.k > 0.002; }
       overlays(ctx, OV.under);
+      RD.setClearColor(0xffffff, 1); COMP.render(); const aoc = AOC.getContext('2d'); aoc.clearRect(0, 0, AOC.width, AOC.height); aoc.drawImage(GLC, 0, 0);
       RD.setClearColor(0x000000, 0); RD.render(SCN, CAM);
-      const py = Y(0);
-      ctx.save(); ctx.globalAlpha = 0.16; ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(GLC, 5, py - 3, DW, PANEL_H); ctx.restore();   // misregistration ghost
-      ctx.save(); ctx.filter = 'saturate(1.45) contrast(1.06)'; ctx.drawImage(GLC, 0, py, DW, PANEL_H); ctx.restore();
+      const py = Y(0), pm = FH >= SEAM ? 1 : PMS(), px = PX(0), pw = DW * pm, ph = PANEL_H * pm;
+      ctx.save(); ctx.globalAlpha = 0.1; ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(GLC, px + 4, py - 2, pw, ph); ctx.restore();   // light misregistration ghost
+      ctx.save(); ctx.filter = 'saturate(1.35) contrast(1.06)'; ctx.drawImage(GLC, px, py, pw, ph); ctx.restore();
+      ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.85; ctx.drawImage(AOC, px, py, pw, ph); ctx.restore();
       overlays(ctx, OV.over);
     }
     // end card on the paper
@@ -517,8 +573,8 @@ M.film({
     const top = Math.max(0, (DH - FH) * S);
     if (top <= 0) return;
     ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, top); ctx.clip();
-    ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(GRAIN[Math.floor(t * 12) % 3], 0, 0);
-    ctx.globalAlpha = 0.12; ctx.drawImage(DOTS, 0, 0);
+    ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.55; ctx.drawImage(GRAIN[Math.floor(t * 12) % 3], 0, 0); ctx.globalAlpha = 1;
+    ctx.globalAlpha = 0.05; ctx.drawImage(DOTS, 0, 0);
     ctx.restore();
   },
 });
