@@ -105,6 +105,7 @@ Round 1 films are `films/cce-ft*`, round 2 films `films/cce-r2-*`; per-clip data
 | 11 Vox Explainer | Video 3 → `..._footage-video03_v02` | Video 14 → `..._r2-video14-small-transaction_v01` |
 | 12 Soft Systems | Video 8 → `..._footage-video08_v02` | Video 6 → `..._r2-video6-transaction-activity_v01` |
 | 17 Brand Native | VSL #4 → `..._footage-vsl4-blank-binder_v03` | Video 13 → `..._r2-video13-fine-print_v01` (VSL #3 skipped: credit-repair claims) |
+| **18 Card Ribbon (new)** | — | Video 17 → `cce_18-card-ribbon_r2-video17-moving-limits_v03` (film `cce-r2-18-cards`) |
 
 ### Pipeline for a new clip (run from `motion-kit/tools/footage/`, `FT_SRC` = folder of clips)
 1. **Get the clip.** Drive downloads are blocked from cloud shells; download in the browser (or ask the creative lead) into `$CCE_ROOT/footage-tests/`, then stage it.

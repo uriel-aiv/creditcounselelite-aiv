@@ -97,3 +97,15 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
   - In motion-only moments the panel is scaled up (about 1.25x in the 2D styles), so check those spans separately: things that fit in the split layout can collide there.
 - **06 Money, motion-only clock** — the clock is 1.4x at the top half and the coins orbit it at a fixed radius outside the face; "REALLY QUICK" sits below the orbit.
 - **04 Instructional, six-box sheet** — box number inset from the corner (clear of the box line by at least its own stroke width; the drawn lines wobble), icon in the left half at 0.78x, label fitted into the right half and centred on the box's height.
+- **18 Card Ribbon (new style, 2026-11-25)** — reference: an isometric "$" built from hundreds of envelopes standing edge to edge on riso blue. Our version uses credit cards and never draws a currency symbol. Film: `motion-kit/films/cce-r2-18-cards` (Video 17).
+  - **Look:** flat riso blue background with dark specks heavier at the edges and fine grain. White cards with rounded corners, outlined in deep ink blue. Card art (chip, number groups, name line, network rings) appears only where a face is big enough to read. A soft contact shadow sits under each card. Hero cards are big single cards; the 0% card carries a gold tag with "0%".
+  - **Geometry:** every unit is a card 1.0 wide x 0.63 tall, standing perpendicular to its path at 0.1 spacing. Shapes are strokes in glyph space, mapped to the ground and turned 15° off the isometric axes so straight ribbons show depth instead of going edge-on. Cards are depth-sorted. Card art always reads left to right.
+  - **Motion vocabulary:**
+    - Build: cards stand up in a domino wave along the strokes.
+    - Riffle: a lift wave runs through a held shape so it never sits still.
+    - Flight: all 600 cards fly in a staggered flock with a low arc to form the next shape; spare cards shrink into a pile.
+    - Train: windows of cards run along a faint ghost track from card A to card B, B pulses on each arrival, and A shrinks while B grows.
+    - Pulses: lift waves run down the branches of a merge into the hero card.
+    - Stacks: cards land flat on piles that rise like a staircase.
+  - **Framing:** each shape is auto-fitted (about 860 x 470 px) below the headline, centred on the panel. The disclaimer sits under the headline, never at the seam, where the caption pill covers it.
+  - **Sound:** card flicks follow the build wave, a whoosh and a run of landing ticks accompany each flock, and riffles and clicks mark each train arriving.
