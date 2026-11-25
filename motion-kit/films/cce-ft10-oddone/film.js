@@ -313,17 +313,23 @@ function q2(ctx, t) {
     [0, 1, 2].forEach((i) => { const w = [260, 200, 330][i], y = Y(700 + i * 44), k = P(t, 13.4 + i * 0.1, 13.8 + i * 0.1, E.outCubic) * ex; if (i === 2) { ctx.save(); ctx.globalAlpha *= k; ctx.fillStyle = C.white; ctx.fillRect(540 - w / 2, y - 12, w * k, 24); ctx.restore(); } else rectOn(ctx, 540, y, w, 24, k, ex); });
   }
 }
-// Q3 15.6-19.6: I'm too busy -> 30 minutes a day (a sliver of the day's circle)
+// Q3 15.6-19.6: I'm too busy -> 30 minutes a day: a day as 48 half-hour squares; only one is filled (the odd one out)
 function q3(ctx, t) {
   if (t < 15.5 || t > 20.4) return; const ex = outK(t, 19.95);
   question(ctx, t, 15.6, 19.8, "I'm too busy.");
-  const R = 230, cx = 540, cy = Y(500);
-  circleOn(ctx, cx, cy, R * clamp(pop(t, 16.0)), P(t, 16.0, 16.8, E.inOutSine) * ex, { a: ex });
-  for (let h = 0; h < 24; h++) { const a = -Math.PI / 2 + h * TAU / 24, k = P(t, 16.4 + h * 0.015, 16.7 + h * 0.015); lineOn(ctx, cx + Math.cos(a) * (R - 18), cy + Math.sin(a) * (R - 18), cx + Math.cos(a) * R, cy + Math.sin(a) * R, k * ex, 0, 2, 0.7 * ex); }
-  const w = P(t, 17.3, 17.8, E.outCubic) * ex;
-  if (w > 0.01) { ctx.save(); ctx.fillStyle = C.white; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R * w, -Math.PI / 2, -Math.PI / 2 + TAU * (30 / 1440)); ctx.closePath(); ctx.fill(); ctx.restore(); }
-  txt(ctx, '30 min', cx + 30, cy - R - 30, 48, 600, C.white, 'left', P(t, 17.6, 17.9) * ex);
-  cap(ctx, 'A day', cx, cy + R + 70, P(t, 16.8, 17.1) * ex, 24);
+  const cols = 8, rows = 6, sz = 70, gap = 22, gw = cols * sz + (cols - 1) * gap, x0 = 540 - gw / 2 + sz / 2, y0 = Y(300);
+  const pick = [5, 2];   // the one half hour
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const i = r * cols + c, x = x0 + c * (sz + gap), y = y0 + r * (sz + gap), k = P(t, 16.0 + i * 0.018, 16.3 + i * 0.018) * ex;
+    const odd = c === pick[0] && r === pick[1], f = odd ? P(t, 17.3, 17.6, E.outCubic) : 0;
+    const dim = odd ? 1 : 1 - 0.55 * P(t, 17.4, 17.8);
+    rectOn(ctx, x, y, sz, sz, k, ex * dim);
+    if (f > 0.01) { const s2 = sz * (1 + 0.12 * wobble(Math.max(0, t - 17.6), 3, 6)); ctx.save(); ctx.globalAlpha = ex; ctx.fillStyle = C.white; ctx.fillRect(x - s2 / 2 * f, y - s2 / 2 * f, s2 * f, s2 * f); ctx.restore(); }
+  }
+  const ox = x0 + pick[0] * (sz + gap), oy = y0 + pick[1] * (sz + gap);
+  lineOn(ctx, ox, oy - sz / 2 - 14, ox, y0 - sz / 2 - 44, P(t, 17.6, 17.85, E.outCubic) * ex, 0, 2.5, ex);
+  txt(ctx, '30 min', ox, y0 - sz / 2 - 60, 46, 600, C.white, 'center', P(t, 17.7, 18.0) * ex);
+  cap(ctx, 'A day', 540, y0 + rows * (sz + gap) + 20, P(t, 16.8, 17.1) * ex, 24);
 }
 // Q4 20.5-29: just a sales pitch? -> a real strategy session, whether you work with us or not
 function q4(ctx, t) {

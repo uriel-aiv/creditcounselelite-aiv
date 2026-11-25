@@ -19,7 +19,7 @@ const SEAM = 980, PANEL_H = 990;
 const HITS = [
   [1.25, 'boxes', 'click', { gain: 0.45 }], [1.43, 'boxes', 'click', { gain: 0.45 }], [1.61, 'boxes', 'click', { gain: 0.45 }], [2.55, 'yellow', 'thud', { gain: 0.6 }],
   [4.15, '700s', 'pop', { pitch: 'C6', gain: 0.4 }], [5.0, 'wobble', 'tick', { gain: 0.3 }], [7.45, 'card', 'thud', { gain: 0.5 }],
-  [8.75, 'user', 'click', { gain: 0.5 }], [8.9, 'user', 'click', { gain: 0.5 }], [10.9, 'parent', 'click', { gain: 0.45 }], [11.05, 'parent', 'click', { gain: 0.45 }],
+  [8.75, 'user', 'click', { gain: 0.5 }], [8.9, 'user', 'click', { gain: 0.5 }], [9.35, 'yellow box', 'thud', { gain: 0.45 }], [10.0, 'turns green', 'bell', { pitch: 'E6', gain: 0.4 }], [10.9, 'parent', 'click', { gain: 0.45 }], [11.05, 'parent', 'click', { gain: 0.45 }],
   [11.05, 'trail', 'whoosh', { len: 0.6, from: 600, to: 2200, gain: 0.25 }], [12.2, 'friend', 'click', { gain: 0.45 }], [12.6, 'family', 'click', { gain: 0.45 }],
   [14.3, 'screen', 'thud', { gain: 0.55 }], [16.85, 'to end', 'whoosh', { len: 0.5, from: 500, to: 2400, gain: 0.4 }], [17.1, 'badge', 'thud', { gain: 0.7 }],
 ];
@@ -149,6 +149,7 @@ function buildWorld() {
   G.boxes = Array.from({ length: 6 }, (_, i) => add('bx', B(2, 2, i === 5 ? 'yellow' : 'green')));
   G.auCard = add('auc', cardModel('blue'));
   G.folk = [['red', 'navy'], ['teal', 'blue'], ['yellow', 'navy'], ['green', 'blue'], ['white', 'navy']].map(([torso, legs]) => { const g = new THREE.Group(); const l = B(2, 1, legs); const tb = B(2, 1, torso); tb.position.y = 1.2; const hd = R(0.62, 'yellow'); hd.position.y = 2.4; g.add(l, tb, hd); return add('fk', g); });
+  G.fixY = add('fy', B(2, 2, 'yellow')); G.fixG = add('fg', B(2, 2, 'green'));
   G.screen = add('scr', (() => { const g = new THREE.Group(); g.add(B(6, 1, 'black', 1.2)); const sc = B(6, 1, 'black', 3.6, false); sc.position.set(0, 1.2, -0.0); g.add(sc); const fc = B(5, 0.2, 'blue', 2.8, false); fc.position.set(0, 1.6, 0.5); g.add(fc); return g; })());
   hideAll();
 }
@@ -320,6 +321,15 @@ function k3(t) {
   const dc = drop(t, 7.45, 7); put(G.auCard, 0, dc.y, 0, dc.vis ? 1.15 : 0, 0.1 * Math.sin(t * 0.6), dc.sq);
   // two users snap onto the card on "authorized users"
   [[-1.4, 8.75], [1.4, 8.9]].forEach(([x, tl], i) => { const d = drop(t, tl, 6); put(G.folk[4 - i], x, 0.4 + d.y, -0.6, d.vis ? 0.62 : 0, 0.3 * (i ? -1 : 1), d.sq); if (t > tl && t < tl + 0.4) OV.over.push({ type: 'pop', p: [x, 2.4, -0.6], k: prog(t, tl, tl + 0.4), r: 0.6 }); });
+  // the payoff: the yellow box from the profile drops in beside the card and turns green
+  const dy = drop(t, 9.35, 7), turn = t > 10.0;
+  if (t < 12.4) {
+    put(G.fixY, 4.6, dy.y, 1.2, dy.vis && !turn ? 1 : 0, 0, dy.sq);
+    const kg = turn ? clamp(sp(t, 10.0, SPRING.bouncy)) : 0; put(G.fixG, 4.6, 0, 1.2, kg * outK(t, 12.0, 0.3), 0, turn ? 0.15 * wobble(t - 10.0, 3, 6) : 0);
+    if (t > 10.0 && t < 10.45) OV.over.push({ type: 'pop', p: [4.6, 1.8, 1.2], k: prog(t, 10.0, 10.45), r: 1.1 });
+    if (t > 10.0) OV.under.push({ type: 'burst', p: [4.6, 0.6, 1.2], r: 120 * clamp(sp(t, 10.0, SPRING.bouncy)) * outK(t, 12.0, 0.3), rot: t * 0.4 });
+    if (t > 8.85 && t < 10.0) OV.over.push({ type: 'trail', fn: (u) => [lerp(0, 4.6, u), 1.4 + Math.sin(Math.PI * u) * 2.5, lerp(0, 1.2, u)], p: P(t, 9.4, 9.9, E.inOutSine), q: P(t, 9.6, 10.0, E.inOutSine), w: 24 });
+  }
   if (t > 8.7) OV.over.push({ type: 'big', s: '+ AUTHORIZED USERS', x: 540, y: Y(200), size: 104, align: 'center', k: clamp(sp(t, 8.7, SPRING.bouncy)) * outK(t, 10.55, 0.25), hit: -1 });
   // parents, friends, family drop in around it; a comet trail runs from each to the card
   FOLK.forEach(([x, z, tl], i) => {

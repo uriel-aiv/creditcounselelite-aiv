@@ -647,43 +647,63 @@ function cross(ctx, x, y, r, p, seed) {        // hand-drawn X in maroon ink
   stroke(ctx, [[x - r, y - r], [x + r, y + r]], { w: 12, color: C.maroon, p: clamp(p * 2), seed });
   stroke(ctx, [[x + r, y - r], [x - r, y + r]], { w: 12, color: C.maroon, p: clamp(p * 2 - 1), seed: seed + 1 });
 }
-// D1 (0.9-5.2): lack of knowledge -> if people knew it was out there -> it's possible
+// D1 (0.9-5.2): an investor who doesn't know it exists -> a magnifier finds the 0% card out there -> it's possible
+function magnifier(ctx, x, y, r, k, seed) {
+  if (k <= 0.01) return;
+  stroke(ctx, arcPts(x, y, r, r, 0, TAU, 40), { w: 7, seed }); stroke(ctx, [[x + r * 0.7, y + r * 0.7], [x + r * 1.6, y + r * 1.6]], { w: 14, seed: seed + 1 });
+}
 function d1(ctx, t) {
   if (t > 5.6) return;
-  const k = sp(t, 0.95, SPRING.bouncy), sway = bob(t, 0.3, 5, 0.4);
-  grp(ctx, out(t, 5.05) * clamp(k), 290, Y(620), () => {
-    person(ctx, 260, Y(840) + sway, 1.45, C.ink, 0, 0, 1);
-    cloud(ctx, 470, Y(400), 3.0 * clamp(P(t, 1.0, 1.4, E.outBack)), 21);
-    if (t < 3.0) txt(ctx, '?', 480, Y(415) + bob(t, 1, 6, 0.8), 120, DISPLAY, C.ink, { align: 'center', p: P(t, 1.2, 1.3) });
-    else bookShape(ctx, 482, Y(332), 0.58, P(t, 3.0, 3.6, E.outCubic), 41);
+  const k = sp(t, 0.95, SPRING.bouncy), sway = bob(t, 0.3, 5, 0.4), o1 = out(t, 5.05);
+  grp(ctx, o1 * clamp(k), 230, Y(620), () => {
+    person(ctx, 230, Y(840) + sway, 1.45, C.ink, 0, 0, 1);
+    // briefcase: he's an investor
+    ctx.save(); ctx.fillStyle = C.ink; rrect(ctx, 262, Y(700) + sway, 92, 66, 8); ctx.fill(); ctx.restore();
+    stroke(ctx, [[288, Y(700) + sway], [288, Y(684) + sway], [328, Y(684) + sway], [328, Y(700) + sway]], { w: 5, seed: 12 });
+    cloud(ctx, 400, Y(380), 2.6 * clamp(P(t, 1.0, 1.4, E.outBack)) * out(t, 2.9), 21);
+    txt(ctx, '?', 410, Y(395) + bob(t, 1, 6, 0.8), 110, DISPLAY, C.ink, { align: 'center', p: P(t, 1.2, 1.3) * out(t, 2.85) });
   });
-  // "out there": a dashed path runs to a burst on the right
-  const tp = P(t, 3.3, 4.1, E.bezier(0.55, 0, 0.35, 1));
-  if (t > 3.25) grp(ctx, out(t, 5.0), 540, Y(470), () => {
-    const d = stroke(ctx, quad([400, Y(560)], [620, Y(250)], [790, Y(440)]), { w: 6, p: tp, dash: [22, 16], march: t * 50, seed: 5, amp: 1 });
-    if (d && tp < 0.97) arrowHead(ctx, d.tip, d.dir, 28);
-  });
-  if (t > 4.4) {
-    const kb = sp(t, 4.45, SPRING.bouncy) * out(t, 5.1);
-    burst(ctx, 800, Y(500), 150, kb, 3, C.blue, 13, 0.3 * (t - 4.45));
-    grp(ctx, kb, 800, Y(500), () => { txt(ctx, 'POSSIBLE', 800, Y(522), 58, DISPLAY, C.white, { align: 'center' }); });
+  // "out there": a magnifier sweeps right and finds the 0% card
+  const sw = P(t, 2.85, 3.6, E.inOutCubic), mx = lerp(400, 760, sw), my = Y(lerp(380, 470, sw)) + Math.sin(Math.PI * sw) * -60;
+  if (t > 2.8) grp(ctx, out(t, 5.0), mx, my, () => magnifier(ctx, mx, my, 80, 1, 31));
+  if (t > 3.5) {
+    const kc = clamp(sp(t, 3.55, SPRING.bouncy)) * out(t, 5.1);
+    burst(ctx, 760, Y(470), 190, sp(t, 4.45, SPRING.bouncy) * out(t, 5.1), 3, C.blue, 13, 0.3 * (t - 4.45));
+    grp(ctx, kc, 760, Y(470), () => { card(ctx, 760, Y(470), 250, 160, -0.08 + 0.04 * Math.sin(t * 2), C.ink); txt(ctx, '0%', 790, Y(500), 70, DISPLAY, C.white, { align: 'center' }); });
   }
-  txt(ctx, 'LACK OF KNOWLEDGE', 540, Y(150), 84, DISPLAY, C.ink, { align: 'center', p: P(t, 0.4, 1.0) * out(t, 2.9) });
-  txt(ctx, 'IF PEOPLE KNEW', 540, Y(150), 84, DISPLAY, C.ink, { align: 'center', p: P(t, 2.8, 3.25) * out(t, 5.0) });
+  txt(ctx, 'POSSIBLE', 760, Y(740), 70, DISPLAY, C.blue, { align: 'center', p: P(t, 4.5, 4.8) * out(t, 5.05) });
+  txt(ctx, 'LACK OF KNOWLEDGE', 540, Y(150), 84, DISPLAY, C.ink, { align: 'center', p: P(t, 0.4, 1.0) * out(t, 2.75) });
+  txt(ctx, "IF PEOPLE KNEW IT'S OUT THERE", 540, Y(150), 70, DISPLAY, C.ink, { align: 'center', p: P(t, 2.8, 3.4) * out(t, 5.0) });
 }
-// D2 (5.2-8.65): credit wasn't talked about in school, and in many homes
+// D2 (5.2-8.65): credit wasn't taught in school, and wasn't talked about at home
+function chalkboard(ctx, x, y, t, t0) {
+  const k = clamp(sp(t, t0, SPRING.bouncy)); if (k <= 0.01) return;
+  grp(ctx, k, x, y, () => {
+    ctx.save(); ctx.fillStyle = '#1F3A2E'; rrect(ctx, x - 200, y - 150, 400, 290, 10); ctx.fill(); ctx.restore();
+    stroke(ctx, [[x - 210, y - 160], [x + 210, y - 160], [x + 210, y + 150], [x - 210, y + 150], [x - 210, y - 160]], { w: 8, seed: 141 });
+    [['MATH', t0 + 0.2], ['SCIENCE', t0 + 0.35], ['HISTORY', t0 + 0.5], ['CREDIT', t0 + 0.75]].forEach(([w, tt], i) => {
+      const yy = y - 95 + i * 66;
+      txt(ctx, w, x - 160, yy + 16, 46, DISPLAY, i === 3 ? '#F4D9A6' : '#F2F2EE', { p: P(t, tt, tt + 0.2) });
+      if (i < 3 && t > tt + 0.2) stroke(ctx, [[x + 90, yy], [x + 110, yy + 20], [x + 150, yy - 20]], { w: 7, color: '#F2F2EE', p: P(t, tt + 0.2, tt + 0.35), seed: 150 + i });
+    });
+  });
+}
 function d2(ctx, t) {
   if (t < 5.2) return;
-  txt(ctx, 'CREDIT', 540, Y(180), 120, DISPLAY, C.blue, { align: 'center', p: P(t, 5.35, 5.75) });
-  const ks = sp(t, 5.9, SPRING.bouncy), kh = sp(t, 7.0, SPRING.bouncy);
-  grp(ctx, clamp(ks), 290, Y(560), () => { school(ctx, 290, Y(560), 1.3, P(t, 5.9, 6.75, E.outCubic), 61); });
-  txt(ctx, 'SCHOOL', 290, Y(800), 60, DISPLAY, C.ink, { align: 'center', p: P(t, 6.5, 6.8) });
-  cross(ctx, 290, Y(540), 150, P(t, 6.95, 7.3, E.outCubic), 71);
-  grp(ctx, clamp(kh), 790, Y(560), () => { house(ctx, 790, Y(570), 1.35, P(t, 7.1, 7.75, E.outCubic), 81); });
-  txt(ctx, 'HOME', 790, Y(800), 60, DISPLAY, C.ink, { align: 'center', p: P(t, 7.55, 7.85) });
-  cross(ctx, 790, Y(540), 150, P(t, 7.9, 8.25, E.outCubic), 91);
+  txt(ctx, 'NOT TAUGHT', 540, Y(150), 96, DISPLAY, C.blue, { align: 'center', p: P(t, 5.3, 5.75) });
+  chalkboard(ctx, 290, Y(500), t, 5.85);
+  txt(ctx, 'SCHOOL', 290, Y(760), 60, DISPLAY, C.ink, { align: 'center', p: P(t, 6.3, 6.6) });
+  stroke(ctx, [[150, Y(596)], [380, Y(590)]], { w: 10, color: C.maroon, p: P(t, 6.95, 7.2, E.outCubic), seed: 71 }); cross(ctx, 445, Y(592), 24, P(t, 7.1, 7.3, E.outCubic), 72);
+  const kh = sp(t, 7.0, SPRING.bouncy);
+  grp(ctx, clamp(kh), 800, Y(540), () => {
+    house(ctx, 800, Y(600), 1.2, P(t, 7.1, 7.65, E.outCubic), 81);
+    // a speech bubble inside: "credit?" that nobody says
+    const kb = P(t, 7.45, 7.7, E.outBack);
+    grp(ctx, kb, 800, Y(330), () => { ctx.save(); ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.ellipse(800, Y(330), 150, 75, 0, 0, TAU); ctx.fill(); ctx.restore(); stroke(ctx, [...arcPts(800, Y(330), 150, 75, 0, TAU, 50)], { w: 6, seed: 91 }); stroke(ctx, [[760, Y(398)], [735, Y(450)], [800, Y(404)]], { w: 6, seed: 92 }); txt(ctx, 'CREDIT?', 800, Y(352), 64, DISPLAY, C.ink, { align: 'center' }); });
+  });
+  txt(ctx, 'HOME', 800, Y(760), 60, DISPLAY, C.ink, { align: 'center', p: P(t, 7.55, 7.85) });
+  cross(ctx, 800, Y(330), 90, P(t, 7.9, 8.25, E.outCubic), 101);
 }
-
 // ------------------------------------------------------------------ captions
 let CAPS = [];
 function buildCaptions(words) {

@@ -21,7 +21,7 @@ const HITS = [
   [1.05, 'rings', 'whoosh', { len: 0.4, from: 600, to: 2200, gain: 0.25 }], [1.45, 'myth', 'thud', { gain: 0.55 }], [2.05, 'cut', 'whoosh', { len: 0.25, from: 3200, to: 900, gain: 0.35 }],
   [3.4, 'report', 'pop', { pitch: 'C6', gain: 0.35 }], [3.75, 'collection', 'blip', { pitch: 'E5', gain: 0.4 }], [5.75, 'pay', 'coins', { gain: 0.4 }],
   [7.6, 'people', 'pop', { pitch: 'G5', gain: 0.3 }], [8.8, 'scared', 'tick', { gain: 0.4 }], [10.4, 'drop', 'whoosh', { len: 0.5, from: 2400, to: 300, gain: 0.4 }], [10.95, '-100', 'thud', { gain: 0.6 }],
-  [11.6, 'clock', 'pop', { pitch: 'C6', gain: 0.35 }], [11.7, 'quick', 'type', { len: 1.2, gain: 0.25 }], [13.6, 'not', 'thud', { gain: 0.6 }], [14.55, 'cut', 'whoosh', { len: 0.25, from: 3200, to: 900, gain: 0.35 }],
+  [11.6, 'clock', 'pop', { pitch: 'C6', gain: 0.35 }], [11.7, 'quick', 'type', { len: 1.2, gain: 0.25 }], [13.6, 'not', 'thud', { gain: 0.6 }], [13.75, 'paid stamp', 'thud', { gain: 0.6 }], [14.55, 'cut', 'whoosh', { len: 0.25, from: 3200, to: 900, gain: 0.35 }],
   [15.55, 'to end', 'whoosh', { len: 0.5, from: 500, to: 2400, gain: 0.4 }], [15.8, 'badge', 'thud', { gain: 0.7 }],
 ];
 
@@ -498,11 +498,19 @@ function m5(ctx, t) {
   if (t < 13.2) return;
   const ar = arrive(t, 13.25, 13.65);
   ctx.save(); ctx.globalAlpha = ar.alpha; camera(ctx, t, ar.s * (1 + 0.04 * prog(t, 13.6, 15.4)), 540, 470);
-  rings(ctx, 540, Y(470), [300, 400], 1, t);
-  if (t > 13.6) bigType(ctx, 'NOT', 540, Y(400) + 100, 300, 1, 0, 13.6, t, C.mint, 'center');
-  txt(ctx, 'THE FIX', 540, Y(700), 120, DISPLAY, C.white, 'center', P(t, 14.3, 14.6));
+  rings(ctx, 300, Y(450), [230, 300], 1, t);
+  // the report: paid... and the collection mark is still on it
+  spr(ctx, SP.doc, 300, Y(440), 2.3 * pop(t, 13.3), -0.03);
+  node(ctx, 400, Y(300), 26, pop(t, 13.4), C.maroon);
+  line(ctx, arcPts(400, Y(300), 34 + ((t - 13.4) % 0.8) * 90, 0, TAU, 50), { w: 3, color: C.maroon, alpha: (1 - ((t - 13.4) % 0.8) / 0.8) * 0.9 });
+  const ks = pop(t, 13.75, { stiffness: 380, damping: 16 });
+  if (ks > 0.01) { ctx.save(); ctx.translate(300, Y(470)); ctx.rotate(-0.18); ctx.scale(lerp(1.6, 1, clamp(ks)), lerp(1.6, 1, clamp(ks))); ctx.globalAlpha *= clamp(ks * 2);
+    ctx.strokeStyle = C.orange; ctx.lineWidth = 8; ctx.strokeRect(-150, -55, 300, 110); txt(ctx, 'PAID', 0, 34, 96, DISPLAY, C.orange, 'center'); ctx.restore(); }
+  txt(ctx, 'STILL REPORTED', 300, Y(760), 54, DISPLAY, C.mint, 'center', P(t, 14.0, 14.3));
+  if (t > 13.6) bigType(ctx, 'NOT', 780, Y(420) + 100, 240, 1, 0, 13.6, t, C.mint, 'center');
+  txt(ctx, 'THE FIX', 780, Y(640), 100, DISPLAY, C.white, 'center', P(t, 14.3, 14.6));
   const [f1, t1] = life(t, 14.55, 14.8, 15.6, 15.9);
-  line(ctx, [[260, Y(660)], [820, Y(660)]], { w: 8, color: C.orange, from: f1, to: t1 });
+  line(ctx, [[600, Y(605)], [960, Y(605)]], { w: 8, color: C.orange, from: f1, to: t1 });
   ctx.restore();
 }
 

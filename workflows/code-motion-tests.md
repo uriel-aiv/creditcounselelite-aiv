@@ -39,6 +39,9 @@ Source: Uriel's direction in chat, Nov 19–23 2026. Last updated: 2026-11-23 (b
 - Podcast clips: crop Brandon per shot (face-tracked); host-only shots become motion-only moments.
 - No "$" in captions or graphics; numbers without currency symbols, always with "Individual results vary. Education only." during claims (bonuses, 7–21x, 90% approval odds, portfolio, members).
 - The brand end card starts right after the last spoken word.
+- Every scene must show what Brandon is saying at that moment (feedback 2026-11-24, v02): read the transcript line by line and draw the specific thing (a statement with a credit row for "statement credit", a week calendar packed with shifts for "busboy", a day as 48 half-hour squares with one filled for "30 minutes a day", map areas for "different in your area"). Generic shapes or label pills that only repeat the words are not enough; add detail.
+- Before a voiceover-only moment, check the source frames: switch to motion-only before the baked graphic appears, not after.
+- In voiceover-only moments the background must fill the whole frame (no hard edge or black band above it).
 - Full steps: `motion-kit/README.md` → "Footage tests".
 
 ## Delivery

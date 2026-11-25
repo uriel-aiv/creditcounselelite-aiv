@@ -307,16 +307,44 @@ function v1(ctx, t) {
   hand(ctx, 'free cash!', X + 130, Yw + 265, -0.05, 1, 72, P(t, 4.55, 5.0, E.linear));
   marker(ctx, oval(X + 200, Yw - 60, 190, 150, -0.08), P(t, 4.6, 5.0, E.inOutSine), 0, 14, 9);
 }
-// v2 5.3-10.4: he took it as statement credit, because he just wanted the cash
+// v2 5.3-10.4: he took the bonus as a statement credit (it lands on the card statement), because he just wanted the cash
+function statementSheet(ctx, X, Yw, t) {
+  const k = land(t, 6.2); if (k <= 0.001) return;
+  const ks = E.outCubic(clamp(k)), d = (1 - ks) * 1300, [jx, jy] = jit(77, 2.4), w = 400, h = 520;
+  ctx.save(); ctx.translate(X + d * 0.6 + jx, Yw - d * 0.8 + jy); ctx.rotate(0.035 + (1 - ks) * 0.12);
+  ctx.shadowColor = 'rgba(25,20,10,0.4)'; ctx.shadowBlur = 1.2; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 4;
+  ctx.fillStyle = '#FBFAF6'; ctx.fillRect(-w / 2, -h / 2, w, h); ctx.shadowColor = 'transparent';
+  ctx.fillStyle = C.pbBlue; ctx.fillRect(-w / 2, -h / 2, w, 14);
+  ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.font = font(40, 400, SERIF); ctx.fillText('STATEMENT', -w / 2 + 26, -h / 2 + 68);
+  ctx.fillStyle = 'rgba(27,27,27,0.55)'; ctx.fillRect(-w / 2 + 26, -h / 2 + 86, w - 52, 3);
+  // printed purchase rows: description bar left, amount bar right (no figures)
+  const r = mulberry32(41);
+  for (let i = 0; i < 6; i++) { const y = -h / 2 + 122 + i * 40; ctx.fillStyle = 'rgba(27,27,27,0.42)'; ctx.fillRect(-w / 2 + 26, y, 120 + r() * 110, 9); ctx.fillRect(w / 2 - 26 - (46 + r() * 30), y, 46 + r() * 30, 9); }
+  // the credit row, printed in once the bonus lands
+  const cr = clamp((t - 8.95) / 0.12); if (cr > 0) {
+    const y = -h / 2 + 122 + 6 * 40 + 18; ctx.globalAlpha = cr;
+    ctx.fillStyle = 'rgba(38,98,53,0.14)'; ctx.fillRect(-w / 2 + 14, y - 30, w - 28, 50);
+    ctx.fillStyle = C.green; ctx.font = font(26, 700, UI); ctx.fillText('BONUS CREDIT', -w / 2 + 26, y + 4);
+    ctx.fillRect(w / 2 - 96, y - 6, 70, 10); ctx.globalAlpha = 1;
+  }
+  ctx.fillStyle = 'rgba(27,27,27,0.55)'; ctx.fillRect(-w / 2 + 26, h / 2 - 70, w - 52, 3);
+  ctx.fillStyle = C.ink; ctx.font = font(24, 700, UI); ctx.fillText('BALANCE', -w / 2 + 26, h / 2 - 34);
+  ctx.restore();
+}
 function v2(ctx, t) {
   const [X, Yw] = ST.s2;
-  piece(ctx, 'scr_notebook', X - 10, Yw - 10, 760, 0.02, land(t, 6.0));
-  piece(ctx, 'tr_envelope', X - 190, Yw - 80, 330, -0.06, land(t, 6.3));
-  piece(ctx, 'tr_card_white', X + 200, Yw - 90, 320, 0.07, land(t, 6.55));
-  deco(ctx, 'st_6', X + 330, Yw - 230, 70, 0.2, P(t, 6.4, 6.5, E.linear) + P(t, 6.5, 6.58, E.linear));
-  label(ctx, 'STATEMENT CREDIT', X + 10, Yw + 120, 0.03, popM(t, 8.55), 50);
-  hand(ctx, 'just wanted the cash', X, Yw + 245, -0.04, 1, 58, P(t, 9.4, 10.2, E.linear));
-  marker(ctx, oval(X + 200, Yw - 90, 180, 130, 0.06), P(t, 8.9, 9.3, E.inOutSine), 0, 14, 21);
+  piece(ctx, 'scr_kraft2', X - 210, Yw - 70, 360, -0.05, land(t, 6.0));
+  piece(ctx, 'tr_envelope', X - 215, Yw - 90, 300, -0.07, land(t, 6.1));
+  statementSheet(ctx, X + 175, Yw - 30, t);
+  deco(ctx, 'st_6', X + 300, Yw - 280, 70, 0.2, P(t, 6.5, 6.6, E.linear) + P(t, 6.6, 6.68, E.linear));
+  hand(ctx, 'bonus', X - 215, Yw + 95, -0.05, 1, 56, P(t, 6.6, 7.0, E.linear));
+  // the bonus coins slide off the envelope onto the statement's credit row
+  const ck = P(t, 8.45, 8.95, E.outCubic), cx = lerp(X - 230, X + 365, ck), cy = lerp(Yw - 120, Yw + 70, ck) - Math.sin(Math.PI * ck) * 120;
+  if (t > 8.4) piece(ctx, 'tr_coins', cx, cy, lerp(200, 130, ck), 0.06, 1);
+  penArrow(ctx, [X - 120, Yw - 200], [X + 80, Yw - 330], [X + 230, Yw - 220], P(t, 8.45, 8.95, E.inOutSine), P(t, 9.9, 10.2, E.linear), 22);
+  label(ctx, 'STATEMENT CREDIT', X - 40, Yw + 250, 0.03, popM(t, 8.6), 46);
+  marker(ctx, oval(X + 165, Yw + 92, 225, 40, 0.04), P(t, 9.05, 9.45, E.inOutSine), 0, 12, 21);
+  hand(ctx, 'just wanted the cash', X - 215, Yw + 170, -0.06, 1, 40, P(t, 9.4, 10.1, E.linear));
 }
 // v3 10.3-17.3: he didn't want to travel; but for travel it could have been 7-21x
 function v3(ctx, t) {
@@ -330,9 +358,9 @@ function v3(ctx, t) {
   piece(ctx, 'sq_pool', X + 265, Yw + 65, 210, 0.09, land(t, 13.1));
   deco(ctx, 'st_2', X + 200, Yw - 245, 110, 1.2, P(t, 13.2, 13.27, E.linear) + P(t, 13.27, 13.35, E.linear));
   label(ctx, 'TRAVEL', X - 200, Yw + 250, -0.05, popM(t, 13.0));
-  if (t > 14.6) { const v = Math.round(lerp(7, 21, P(t, 14.6, 15.6, E.inOutSine))); hand(ctx, `${v}x`, X + 225, Yw + 262, -0.08, 1, 110); }
-  hand(ctx, 'up to', X + 60, Yw + 255, -0.04, 1, 56, P(t, 14.3, 14.6, E.linear));
-  highlight(ctx, X + 225, Yw + 228, 190, 84, -0.05, P(t, 15.7, 16.0, E.outCubic));
+  if (t > 14.6) { const v = Math.round(lerp(7, 21, P(t, 14.6, 15.6, E.inOutSine))); hand(ctx, `${v}x`, X + 255, Yw + 262, -0.08, 1, 110); }
+  hand(ctx, 'extra return', X + 45, Yw + 258, -0.04, 1, 44, P(t, 15.8, 16.4, E.linear));
+  highlight(ctx, X + 255, Yw + 228, 190, 84, -0.05, P(t, 15.7, 16.0, E.outCubic));
 }
 
 function endCard(ctx, t, IMG) {

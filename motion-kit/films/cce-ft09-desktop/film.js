@@ -475,9 +475,25 @@ function typed(s, t, a, b) { return s.slice(0, Math.round(s.length * P(t, a, b, 
 function d1(ctx, t) {
   if (t > 4.95) return;
   const i1 = winIn(t, 0.15), o1 = winOut(t, 2.3);
-  if (macWindow(ctx, 150, Y(130), 780, 520, 'Notes', i1.k * o1.k, i1.a * o1.a)) {
-    txt(ctx, 'This week', 200, Y(250), 44, 700, '#1D1D1F');
-    [['Shift: bussing tables', 0.5, 0.95], ['Shift: scrubbing tables', 0.65, 1.4], ['Shift: bussing tables', 0.8, 1.85], ['Shift: closing', 0.95, 2.1]].forEach(([l, a, d], j) => checkRow(ctx, 220, Y(330 + j * 75), l, a, t, d));
+  if (macWindow(ctx, 110, Y(110), 860, 600, 'Calendar', i1.k * o1.k, i1.a * o1.a)) {
+    // a work week packed with shifts: every day gets a "Bussing tables" block, a few get a second "Closing" shift
+    txt(ctx, 'This week', 160, Y(222), 42, 700, '#1D1D1F');
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], gx = 160, gw = 760, cw = gw / 7, gy = Y(260), gh = 410;
+    days.forEach((d, j) => { txt(ctx, d, gx + cw * j + cw / 2, gy + 30, 26, 600, j === 4 ? '#FF3B30' : '#6E6E73', 'center'); if (j) { ctx.fillStyle = '#E5E5EA'; ctx.fillRect(gx + cw * j, gy + 44, 2, gh - 44); } });
+    for (let r = 0; r < 5; r++) { ctx.fillStyle = '#EFEFF4'; ctx.fillRect(gx, gy + 44 + r * 73, gw, 2); }
+    const SH = [[0, 0, 2.0, 0.3], [1, 0.4, 2.2, 0.45], [2, 0, 2.0, 0.6], [3, 1.0, 2.2, 0.75], [4, 0, 2.6, 0.9], [5, 0.2, 2.8, 1.05], [6, 0.6, 2.2, 1.2], [1, 2.9, 1.3, 1.45], [3, 3.3, 1.2, 1.6], [4, 2.9, 1.4, 1.75], [5, 3.3, 1.2, 1.9], [0, 2.4, 1.0, 2.0]];
+    SH.forEach(([dj, st, len, t0], j) => {
+      const k = clamp(sp(t, t0, SPRING.bouncy)); if (k <= 0.01) return;
+      const bx = gx + cw * dj + 6, by = gy + 52 + st * 73, bh = len * 73 - 8;
+      ctx.save(); ctx.translate(bx + (cw - 12) / 2, by); ctx.scale(1, k); ctx.translate(-(bx + (cw - 12) / 2), -by);
+      const late = j >= 7, col = late ? '#C0392B' : '#E07A1F';
+      ctx.fillStyle = late ? 'rgba(192,57,43,0.18)' : 'rgba(224,122,31,0.2)'; rrect(ctx, bx, by, cw - 12, bh, 8); ctx.fill();
+      ctx.fillStyle = col; rrect(ctx, bx, by, 6, bh, 3); ctx.fill();
+      txt(ctx, late ? 'Close' : 'Bus', bx + 14, by + 32, 22, 700, col);
+      ctx.restore();
+    });
+    // the week runs out of room: a red "+3 more" chip lands on Friday
+    const mk = clamp(sp(t, 2.05, SPRING.bouncy)); if (mk > 0.01) { ctx.save(); ctx.translate(gx + cw * 4.5, gy + gh - 18); ctx.scale(mk, mk); ctx.fillStyle = '#FF3B30'; rrect(ctx, -46, -20, 92, 40, 20); ctx.fill(); txt(ctx, '+3', 0, 10, 26, 700, '#FFFFFF', 'center'); ctx.restore(); }
     ctx.restore();
   }
   const i2 = winIn(t, 2.35), o2 = winOut(t, 4.55);
@@ -497,7 +513,9 @@ function d2(ctx, t) {
   if (macWindow(ctx, 170, Y(130), 740, 520, 'Contacts', i1.k * o1.k, i1.a * o1.a)) {
     ctx.fillStyle = '#E8E8ED'; rrect(ctx, 220, Y(230), 640, 56, 14); ctx.fill();
     txt(ctx, typed('connections', t, 5.15, 5.6), 260, Y(268), 28, 500, '#1D1D1F');
+    for (let r = 0; r < 3; r++) { const a = 1 - P(t, 5.45 + r * 0.05, 5.6 + r * 0.05); if (a <= 0.01) continue; ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = '#D1D1D6'; ctx.beginPath(); ctx.arc(260, Y(345 + r * 80), 26, 0, TAU); ctx.fill(); rrect(ctx, 305, Y(333 + r * 80), 260 - r * 50, 24, 12); ctx.fill(); ctx.restore(); }
     txt(ctx, 'NO CONNECTIONS', 540, Y(470), 72, 700, '#8E8E93', 'center', P(t, 5.6, 5.85));
+    txt(ctx, '0 contacts', 540, Y(545), 32, 500, '#AEAEB2', 'center', P(t, 5.7, 5.95));
     ctx.restore();
   }
   // Spotlight: "playbook" -> no results, the bar shakes on "actually works"
@@ -589,7 +607,7 @@ function d6(ctx, t) {
 
 // ------------------------------------------------------------------ layout over time
 const END = 31.39; window.__END = END;
-const FH_KEYS = [[0, 0], [4.8, SEAM], [9.4, 0], [10.3, SEAM], [18.9, 0], [24.45, SEAM], [27.3, 0], [END, 0]];
+const FH_KEYS = [[0, 0], [4.8, SEAM], [9.4, 0], [10.3, SEAM], [18.45, 0], [24.45, SEAM], [27.3, 0], [END, 0]];
 function footH(t) {
   let v = springKeys(t, FH_KEYS, { stiffness: 150, damping: 17 });
   for (let i = 1; i < FH_KEYS.length; i++) v -= Math.sign(FH_KEYS[i][1] - FH_KEYS[i - 1][1]) * 34 * antic(t, FH_KEYS[i][0], 0.22);

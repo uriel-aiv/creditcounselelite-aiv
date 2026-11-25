@@ -247,11 +247,13 @@ function sG(ctx, t) {
 const LV = [[Y0 => Y0(330), 'Big banks', B.royal, 1.95, 220], [Y0 => Y0(510), 'Regional banks', B.teal, 2.95, 170], [Y0 => Y0(690), 'Local credit unions', B.sky, 4.3, 130]];
 function sL(ctx, t) {
   if (t < 0.7) return;
+  const lad = 1 - P(t, 9.2, 9.6); if (lad <= 0.01) return; ctx.save(); ctx.globalAlpha *= lad; sLin(ctx, t); ctx.restore();
+}
+function sLin(ctx, t) {
   serif(ctx, 'Three levels', 540, Y(165), 96, P(t, 1.2, 1.6) * (1 - P(t, 8.6, 8.9)));
-  serif(ctx, 'Different in every area', 540, Y(165), 80, P(t, 9.3, 9.7), true, 'center', 'rgb(0,74,173)');
   const path = [[300, Y(330)], [300, Y(510)], [300, Y(690)]];
   dashed(ctx, path, P(t, 2.4, 4.6, E.inOutSine), 0, { nodes: [0, 0.5, 1], dots: 2, t, speed: 0.4 });
-  const power = P(t, 6.9, 7.3), diff = P(t, 9.9, 10.4, E.outCubic);
+  const power = P(t, 6.9, 7.3);
   LV.forEach(([yf, label, col, t0, isz], i) => {
     const y = yf(Y), focus = i === 2, dimK = power * (focus ? 0 : 0.85);
     const k = pop(t, t0) * (focus ? 1 + 0.06 * Math.sin((t - 7.0) * 5) * power : 1 - 0.12 * dimK);
@@ -259,9 +261,29 @@ function sL(ctx, t) {
     pill(ctx, label, 470, y, focus ? (power > 0.5 ? B.royal : col) : col, k, { glow: focus ? 0.6 + 0.8 * power : 0.6 * (1 - dimK), dim: dimK > 0.5 ? 1 : 0, fixed: true, size: 40, w: 420 });
     icon(ctx, 'bank', 830, y, isz, pop(t, t0 + 0.1), { fixed: true, alpha: 1 - 0.6 * dimK });
   });
-  serif(ctx, 'Most power', 540, Y(830), 64, P(t, 7.0, 7.4) * (1 - P(t, 9.6, 9.9)), true, 'center', 'rgb(0,74,173)');
-  // each one is different: the credit union splits into pills of different sizes around it
-  [[250, 820, 120], [420, 800, 170], [590, 830, 90], [740, 805, 150], [880, 825, 110]].forEach(([x, y, w], j) => pill(ctx, '', x, Y(y), [B.sky, B.teal, B.peri, B.royal, B.navy][j], pop(t, 9.95 + j * 0.07) * diff, { glow: 0.5, fixed: true, w, size: 26 }));
+  // most power: the smallest bank sends out rings; the arrow says small -> power
+  const yU = Y(690);
+  for (let r = 0; r < 3; r++) { const f = ((t - 7.0) * 0.8 + r / 3) % 1; if (t > 7.0 && t < 9.6) { ctx.save(); ctx.globalAlpha = (1 - f) * 0.7 * (1 - P(t, 9.2, 9.6)); ctx.strokeStyle = rgba(B.royal, 1); ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(830, yU, 60 + f * 130, (60 + f * 130) * 0.86, 0, 0, TAU); ctx.stroke(); ctx.restore(); } }
+  serif(ctx, 'Most power', 540, Y(870), 72, P(t, 7.0, 7.4) * (1 - P(t, 9.2, 9.5)), true, 'center', 'rgb(0,74,173)');
+}
+// each one is different in your area: three dashed area outlines, each holding a credit union that glows differently
+const AREAS = [[280, 440, 190, 3, 150, B.teal, 9.9], [780, 470, 170, 7, 100, B.royal, 10.15], [520, 760, 200, 11, 125, B.peri, 10.4]];
+function sAreas(ctx, t) {
+  if (t < 9.3) return;
+  serif(ctx, 'Different in every area', 540, Y(165), 80, P(t, 9.3, 9.7), true, 'center', 'rgb(0,74,173)');
+  AREAS.forEach(([x, y, R, seed, isz, col, t0], j) => {
+    const r = mulberry32(seed), ph = [r() * 6, r() * 6, r() * 6];
+    const pts = Array.from({ length: 73 }, (_, i) => { const a = (i / 72) * TAU, rr = R * (1 + 0.12 * Math.sin(a * 3 + ph[0]) + 0.07 * Math.sin(a * 5 + ph[1])); return [x + Math.cos(a) * rr, Y(y) + Math.sin(a) * rr * 0.78]; });
+    // soft fill of the area, then its dashed border
+    const fk = P(t, t0 - 0.3, t0 + 0.3);
+    ctx.save(); ctx.globalAlpha = fk * 0.5; ctx.fillStyle = rgba(col, 0.16); ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p))); ctx.closePath(); ctx.fill(); ctx.restore();
+    if (TOPO && fk > 0) { ctx.save(); ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p))); ctx.closePath(); ctx.clip(); ctx.globalAlpha = fk * 0.22; ctx.drawImage(TOPO, x - R, Y(y) - R * 0.8, R * 2, R * 1.6); ctx.restore(); }
+    dashed(ctx, pts, P(t, t0 - 0.4, t0 + 0.2, E.inOutSine), 0, { nodes: [0.12, 0.47, 0.81], t, w: 2.5 });
+    // the credit union inside: a different size and a different strength of glow in each area
+    const g = [0.35, 1.0, 0.65][j], pk = pop(t, t0);
+    if (pk > 0.01) { ctx.save(); ctx.globalAlpha = clamp(pk) * (0.4 + 0.5 * g) * (0.85 + 0.15 * Math.sin(t * 3 + j)); const gr = ctx.createRadialGradient(x, Y(y), 0, x, Y(y), isz * 1.2); gr.addColorStop(0, rgba(col, 0.75)); gr.addColorStop(1, rgba(col, 0)); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, Y(y), isz * 1.2, 0, TAU); ctx.fill(); ctx.restore(); }
+    icon(ctx, 'bank', x, Y(y), isz, pk, { fixed: true });
+  });
 }
 
 function endCard(ctx, t, IMG) {
@@ -344,7 +366,7 @@ M.film({
       const z = 1 + 0.012 * Math.sin(t * 0.3), cx = 540, cy = Y(480);
       ctx.save(); ctx.translate(cx, cy); ctx.scale(z, z); ctx.rotate(0.006 * Math.sin(t * 0.2)); ctx.translate(-cx, -cy);
       system(ctx, t, 0.3);
-      sL(ctx, t);
+      sL(ctx, t); sAreas(ctx, t);
       ctx.restore();
     }
     endCard(ctx, t, IMG);

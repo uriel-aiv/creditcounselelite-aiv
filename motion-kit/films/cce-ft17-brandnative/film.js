@@ -327,8 +327,8 @@ function sheet(ctx, R, t, o = {}) {
   drawLines(ctx, R, t, { n: o.n || 110, alpha: o.alpha || 0.2, width: 1.2, col: [40, 100, 255], hi: [180, 210, 255] });
 }
 function background(ctx, t) {
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, DW, DH);
-  const g = ctx.createRadialGradient(0.5 * DW, 0.6 * PH, 40, 0.5 * DW, 0.6 * PH, PH * 1.1); g.addColorStop(0, 'rgba(0,60,170,0.4)'); g.addColorStop(0.5, 'rgba(0,30,95,0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, DW, DH);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, -DH, DW, DH * 3);
+  const g = ctx.createRadialGradient(0.5 * DW, 0.6 * PH, 40, 0.5 * DW, 0.6 * PH, PH * 1.1); g.addColorStop(0, 'rgba(0,60,170,0.4)'); g.addColorStop(0.5, 'rgba(0,30,95,0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, -DH, DW, DH * 3);
   const R1 = { P: toPx(drift([[-0.35, 0.3], [0.2, 0.55], [0.65, 0.36], [1.35, 0.5]], t, 0.012, 2)), w: 0.26, tw0: 0.2, tw: 2.6, spin: 0.05, seed: 4 };
   const R2 = { P: toPx(drift([[-0.3, 0.6], [0.35, 0.32], [0.75, 0.62], [1.3, 0.28]], t, 0.01, 5)), w: 0.22, tw0: 1.4, tw: 2.2, spin: -0.05, seed: 5 };
   ctx.save(); ctx.globalAlpha = BG_OPACITY;
