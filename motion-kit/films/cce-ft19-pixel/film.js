@@ -148,14 +148,15 @@ function pixText(ctx, s, x, y, sc, col, k = 1) {   // draws onto the pixel canva
 // a Habbo-style notice banner: dark navy panel, gold top rule, white pixel text with a dark drop shadow
 function banner(ctx, s, cy, sc, t, a, b, col = '#FFFFFF') {   // in at a (pops down + types), out at b (lifts + fades)
   if (t < a || t > b + 0.2) return;
+  sc = 1; cy = Math.min(cy, 12);   // headlines always 1x, high in the frame
   while (sc > 1 && textW(s, sc) + 10 > VW - 8) sc--;
   const kin = clamp(spring(t - a, { stiffness: 380, damping: 18 })), kout = P(t, b, b + 0.2, E.inCubic);
-  const w = textW(s, sc) + 10, h = 7 * sc + 8, x = r((VW - w) / 2), y = r(cy - h / 2 - (1 - kin) * 10 - kout * 8);
+  const w = textW(s, sc) + 8, h = 7 * sc + 6, x = r((VW - w) / 2), y = r(cy - h / 2 - (1 - kin) * 10 - kout * 8);
   ctx.save(); ctx.globalAlpha = clamp(kin * 3) * (1 - kout);
   ctx.fillStyle = OUT; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
   ctx.fillStyle = '#0E1B5C'; ctx.fillRect(x, y, w, h); ctx.fillStyle = '#F2C14E'; ctx.fillRect(x, y, r(w * clamp((t - a) / 0.25)), 1); ctx.fillStyle = '#2B3E9E'; ctx.fillRect(x, y + h - 1, w, 1);
   const typed = clamp((t - a) / Math.max(0.12, s.length * 0.025));
-  pixText(ctx, s, x + 6, y + 5, sc, OUT, typed); pixText(ctx, s, x + 5, y + 4, sc, col, typed);
+  pixText(ctx, s, x + 5, y + 4, sc, OUT, typed); pixText(ctx, s, x + 4, y + 3, sc, col, typed);
   ctx.restore();
 }
 

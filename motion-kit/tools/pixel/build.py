@@ -1,9 +1,11 @@
 # build a pixel film from the 19 engine: python3 build.py <film-dir> <scenes.js> <title>
-import sys, re
+import sys, re, os
+HERE = os.path.dirname(os.path.abspath(__file__))
+KIT = os.path.normpath(os.path.join(HERE, '..', '..'))
 film, scenes, title = sys.argv[1:4]
-base = open('films/cce-ft19-pixel/film.js').read()
+base = open(os.path.join(KIT, 'films', 'cce-ft19-pixel', 'film.js')).read()
 sc = open(scenes).read()
-ex = open('tools/pixel/extras.js').read()
+ex = open(os.path.join(HERE, 'extras.js')).read()
 def cut(s, a, b, new):
     i = s.index(a); j = s.index(b, i); return s[:i] + new + s[j:]
 s = base

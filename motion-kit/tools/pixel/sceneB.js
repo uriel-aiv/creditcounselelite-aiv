@@ -16,7 +16,7 @@ function drawPixels(ctx, t) {
     // the busboy scrubs a table; two diners walk past without a look; he thinks of the playbook he never got
     const w = walker(t, [[0, 98, 150], [8.75, 98, 150], [9.5, 120, 196]]);
     const scrub = (t > 0.3 && t < 2.6) || (t > 4.8 && t < 6.3);
-    cast(ctx, [{ w: { x: 116, y: 144 }, draw: () => spr(ctx, 'ctable', 116, 145) }, { w, who: 'busboy', arms: scrub ? (Math.floor(t * 6) % 2 ? 'scrub0' : 'scrub1') : null, flip: scrub ? false : null },
+    cast(ctx, [{ w: { x: 119, y: 146 }, draw: () => spr(ctx, 'ctable', 119, 152) }, { w, who: 'busboy', arms: scrub ? (Math.floor(t * 6) % 2 ? 'scrub0' : 'scrub1') : null, flip: scrub ? false : null },
       t < 6.4 ? popIn(ctx, t, 4.85, 126, 116, 'av', t > 5.6) : null, t < 6.5 ? popIn(ctx, t, 5.05, 146, 124, 'friend2', t > 5.7) : null]);
     for (const [tx, x, y] of [[6.4, 126, 116], [6.5, 146, 124]]) if (t > tx && t < tx + 0.3) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tx) / 0.1)), x, y - 18);
     if (scrub) for (let k = 0; k < 3; k++) { const ph = (t * 2.4 + k / 3) % 1; ctx.fillStyle = '#FFFFFF'; ctx.globalAlpha = 1 - ph; ctx.fillRect(r(w.x + 15 + k * 3), r(w.y - 22 - ph * 10), 1, 1); ctx.globalAlpha = 1; }   // soap bubbles

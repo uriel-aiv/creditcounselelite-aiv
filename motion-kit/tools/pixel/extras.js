@@ -35,12 +35,16 @@ function book() { const b = buf(12, 9); rect(b, 0, 0, 12, 9, '#1F2C72'); rect(b,
 function pin() { const b = buf(7, 10); rect(b, 1, 0, 5, 6, '#F2C14E'); rect(b, 0, 1, 7, 4, '#F2C14E'); rect(b, 2, 2, 3, 2, '#FFF4C4'); rect(b, 2, 6, 3, 2, '#C99A2E'); px(b, 3, 8, '#C99A2E'); px(b, 3, 9, '#C99A2E'); return b; }
 function arrowDown() { const b = buf(11, 12); rect(b, 3, 0, 5, 6, '#F2C14E'); poly(b, [[0, 6], [11, 6], [5.5, 12]], '#F2C14E'); return b; }
 function wallet() { const b = buf(14, 9); rect(b, 0, 0, 14, 9, '#5A3A22'); rect(b, 0, 0, 14, 2, '#7A5232'); rect(b, 9, 3, 5, 3, '#3E2716'); px(b, 11, 4, '#F2C14E'); return b; }
-function cafeTable() {   // a small round-top diner table (two plates, a cup), seen from the iso angle
-  const b = buf(24, 20);
-  poly(b, [[12, 0], [24, 6], [12, 12], [0, 6]], '#F4E8CF'); poly(b, [[0, 6], [12, 12], [12, 14], [0, 8]], '#C9372C'); poly(b, [[12, 12], [24, 6], [24, 8], [12, 14]], '#A42A22');
-  rect(b, 11, 14, 2, 5, '#8A8A92'); rect(b, 8, 18, 8, 2, '#5E5E66');
-  for (const [x, y] of [[8, 5], [15, 7]]) { rect(b, x - 2, y - 1, 5, 3, '#FFFFFF'); px(b, x, y, '#B8863E'); px(b, x + 1, y, '#8C5A2B'); }
-  rect(b, 12, 2, 2, 2, '#E9E2CF'); px(b, 12, 2, '#6B3A1E');
+function cafeTable() {   // matches the diner's own tables: square cream top seen at the iso angle, thin edge, plates, chrome pedestal (palette sampled from the room)
+  const b = buf(32, 26), top = '#F3D9B3', topS = '#E3CFAC', edge = '#CAB496', edgeS = '#A28F70', rimL = '#EADECB', chrome = '#A69C90', chromeS = '#63615A', dark = '#2D2823';
+  poly(b, [[16, 1], [31, 8.5], [16, 16], [1, 8.5]], top);
+  poly(b, [[16, 9], [31, 8.5], [16, 16]], topS);
+  for (let i = 0; i < 15; i++) { px(b, 16 - i, 1 + i / 2, rimL); px(b, 16 + i, 1 + i / 2, rimL); }
+  poly(b, [[1, 8.5], [16, 16], [16, 18], [1, 10.5]], edge); poly(b, [[16, 16], [31, 8.5], [31, 10.5], [16, 18]], edgeS);
+  for (const [x, y] of [[11, 7], [19, 9]]) { poly(b, [[x, y - 2], [x + 4, y], [x, y + 2], [x - 4, y]], chrome); px(b, x, y, '#D9CDBE'); px(b, x + 1, y, '#9A3A2A'); }
+  rect(b, 22, 5, 2, 2, '#E9E2CF'); px(b, 22, 5, '#6B3A1E');
+  rect(b, 15, 18, 2, 6, chrome); px(b, 16, 18, chromeS); px(b, 16, 20, chromeS);
+  poly(b, [[16, 22], [22, 24.5], [16, 26], [10, 24.5]], chromeS); px(b, 16, 25, dark);
   return b;
 }
-function buildExtras() { SPR.ctable = toCanvas(cafeTable()); SPR.book = toCanvas(book()); SPR.pin = toCanvas(pin()); SPR.arrow = toCanvas(arrowDown()); SPR.wallet = toCanvas(wallet()); }
+function buildExtras() { SPR.ctable = toCanvas(cafeTable(), false); SPR.book = toCanvas(book()); SPR.pin = toCanvas(pin()); SPR.arrow = toCanvas(arrowDown()); SPR.wallet = toCanvas(wallet()); }

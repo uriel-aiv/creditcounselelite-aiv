@@ -198,6 +198,9 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - one small line at the top of the panel, never over a character or a key prop;
     - the story beats (busboy, no connections, parents, friends, travel) are told by the animation alone;
     - the call to action is a bouncing arrow with no text.
+  - **Round 5 feedback ("the table looks different from the rest", "titles still huge"):**
+    - a code-drawn prop must match the room it sits in: sample the room's own palette and copy its shapes (the cafe table now copies the diner's cream iso tabletop, chrome pedestal and napkin holders) and draw it without the dark sprite outline the characters use;
+    - headlines are always 1x pixel text (about 28 px tall on a 720 px frame) at the very top of the panel; never scale them up, even for short numbers.
   - **Boss sunglasses:** two shaped lenses with a two-pixel glint, a gold brow bar and bridge, and a temple to the ear (not one black bar).
   - **Keep in mind:**
     - banners auto-shrink to fit the 180-px window;
