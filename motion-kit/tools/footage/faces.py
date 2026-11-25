@@ -1,6 +1,6 @@
 import os
 import cv2, json, numpy as np, subprocess
-SRC=os.environ.get('FT_SRC', os.path.expanduser('~/UU/creditcounsel/footage-tests'))
+SRC=os.environ.get('FT_SRC', os.path.join(os.environ.get('CCE_ROOT', os.path.expanduser('~/CCE')), 'footage-tests'))
 cas=cv2.CascadeClassifier(os.environ.get('HAAR', cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'))
 shots=json.load(open('shots.json')); res={}
 for n in ['04_video04','05b_video24','06_video29','11_video03','12_video08']:

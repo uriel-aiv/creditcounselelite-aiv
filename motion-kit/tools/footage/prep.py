@@ -4,7 +4,7 @@ import json, subprocess, os, sys, math
 import numpy as np
 from PIL import Image
 import os
-SRC=os.environ.get('FT_SRC', os.path.expanduser('~/UU/creditcounsel/footage-tests'))
+SRC=os.environ.get('FT_SRC', os.path.join(os.environ.get('CCE_ROOT', os.path.expanduser('~/CCE')), 'footage-tests'))
 FPS=24000/1001
 OUT=os.environ.get('FT_OUT', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'footage-tests'))
 faces=json.load(open('faces.json'))

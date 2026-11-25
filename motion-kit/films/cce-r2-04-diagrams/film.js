@@ -849,9 +849,15 @@ function r3(ctx, t) {
       const y = Y(y0), kb = P(t, 7.75 + i * 0.09, 8.1 + i * 0.09, E.outCubic), fix = i % 2 === 0, dim = fix ? 0 : fx;
       ctx.save(); ctx.globalAlpha = 1 - 0.6 * dim;
       stroke(ctx, [[x - 180, y - 85], [x + 180, y - 85], [x + 180, y + 85], [x - 180, y + 85], [x - 180, y - 85]], { w: fix && fx > 0 ? lerp(5, 10, fx) : 5, color: fix && fx > 0.5 ? C.blue : C.ink, p: kb, seed: 190 + i, dash: !fix && fx > 0.5 ? [14, 12] : null });
-      txt(ctx, String(i + 1), x - 160, y - 50, 34, DISPLAY, fix && fx > 0.5 ? C.blue : C.ink, { p: kb });
+      txt(ctx, String(i + 1), x - 166, y - 56, 28, DISPLAY, fix && fx > 0.5 ? C.blue : C.ink, { p: kb });
       ctx.restore();
-      if (fix) { boxIcon(ctx, i, x, y, t); const lb = BOXLBL[i].split('\n'); lb.forEach((l, j) => txt(ctx, l, x + 22, y - 6 + j * 36, 32, DISPLAY, C.ink, { p: P(t, BOXT[i], BOXT[i] + 0.4) })); }
+      if (fix) {
+        // icon in the left half (scaled down, clear of the box number), label in the right half, both centred on the box
+        ctx.save(); ctx.translate(x - 90, y + 8); ctx.scale(0.78, 0.78); ctx.translate(-(x - 100), -y); boxIcon(ctx, i, x, y, t); ctx.restore();
+        const lb = BOXLBL[i].split('\n'); ctx.save(); ctx.font = font(30, 800, DISPLAY); const lw = Math.max(...lb.map((l) => ctx.measureText(l).width)); ctx.restore();
+        const ls = Math.min(30, 30 * 158 / lw), lx = x + 92 - Math.min(lw, 158) / 2;   // fits inside the right half with a margin
+        lb.forEach((l, j) => txt(ctx, l, lx, y + (j - (lb.length - 1) / 2) * ls * 1.15 + ls * 0.36, ls, DISPLAY, C.ink, { p: P(t, BOXT[i], BOXT[i] + 0.4) }));
+      }
     });
   });
   ctx.restore();

@@ -499,13 +499,15 @@ function m4(ctx, t) {
   if (t < 11.2 || t > 13.55) return;
   const ar = arrive(t, 11.2, 11.6), th = through(t, 13.15, 13.5);
   ctx.save(); ctx.globalAlpha = ar.alpha * th.alpha; camera(ctx, t, ar.s * th.s, 540, 470);
-  for (let i = 0; i < 14; i++) { const ph = fr(t * 1.6 + i / 14); const x = lerp(-80, 1160, ph), y = Y(i % 2 ? 110 : 850) + 20 * Math.sin(i * 2 + t * 4); spr(ctx, (i % 3) ? SP.dollar : SP.dollarO, x, y, 1.0, ph * 6, 0.45 * Math.sin(Math.PI * ph)); }
+  // coins orbit the clock (money going round fast), clear of the clock face and of the label
+  const CY = Y(380);
+  for (let i = 0; i < 8; i++) { const a = t * 2.2 + i * TAU / 8, ko = P(t, 11.7 + i * 0.04, 11.95 + i * 0.04); spr(ctx, (i % 2) ? SP.dollar : SP.dollarO, 540 + Math.cos(a) * 375, CY + Math.sin(a) * 300, 0.6 * ko, a, 0.85); }
   const kc = pop(t, 11.6);
-  spr(ctx, SP.clock, 540, Y(470), 2.3 * kc, 0, 1);
+  spr(ctx, SP.clock, 540, CY, 1.4 * kc, 0, 1);
   const ang = -Math.PI / 2 + TAU * 3 * P(t, 11.7, 13.1, E.inOutSine);
-  line(ctx, [[540, Y(470)], [540 + Math.cos(ang) * 170, Y(470) + Math.sin(ang) * 170]], { w: 10, color: C.white, alpha: kc });
-  node(ctx, 540, Y(470), 11, kc);
-  txt(ctx, 'REALLY QUICK', 540, Y(800), 96, DISPLAY, C.white, 'center', P(t, 12.5, 12.8));
+  line(ctx, [[540, CY], [540 + Math.cos(ang) * 105, CY + Math.sin(ang) * 105]], { w: 10, color: C.white, alpha: kc });
+  node(ctx, 540, CY, 11, kc);
+  txt(ctx, 'REALLY QUICK', 540, Y(880), 96, DISPLAY, C.white, 'center', P(t, 12.5, 12.8));
   ctx.restore();
 }
 // m5 13.35-15.43: that is not going to solve your problems

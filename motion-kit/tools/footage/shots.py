@@ -1,7 +1,8 @@
+import tempfile
 import os
 import subprocess, json, re, sys, os
 from PIL import Image, ImageDraw
-SRC=os.environ.get('FT_SRC', os.path.expanduser('~/UU/creditcounsel/footage-tests'))
+SRC=os.environ.get('FT_SRC', os.path.join(os.environ.get('CCE_ROOT', os.path.expanduser('~/CCE')), 'footage-tests'))
 out={}
 for f in sorted(os.listdir(SRC)):
     n=f[:-4]; p=f'{SRC}/{f}'
@@ -12,7 +13,7 @@ for f in sorted(os.listdir(SRC)):
     out[n]=shots
     ths=[]
     for i,(a,e) in enumerate(shots):
-        t=(a+e)/2; tmp=f'/tmp/_s.jpg'
+        t=(a+e)/2; tmp=os.path.join(tempfile.gettempdir(), '_s.jpg')
         subprocess.run(['ffmpeg','-v','error','-y','-ss',str(t),'-i',p,'-frames:v','1','-vf','scale=-1:200',tmp])
         im=Image.open(tmp).convert('RGB'); d=ImageDraw.Draw(im); d.rectangle((0,0,150,22),fill='black'); d.text((4,4),f'{i}: {a:.1f}-{e:.1f}',fill='yellow'); ths.append(im)
     W=sum(i.width for i in ths[:8]); rows=(len(ths)+7)//8

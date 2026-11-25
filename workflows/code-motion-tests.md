@@ -1,7 +1,7 @@
 # Code motion tests — founder split-screen rules and per-style notes
 
 Purpose: the rules and decisions behind the code-rendered CCE motion tests, so any future build follows the same direction.
-Source: Uriel's direction in chat, Nov 19–23 2026. Last updated: 2026-11-23 (brand round, 17 Brand Native).
+Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2026-11-25 (footage rounds 1–2, QA pass, Toy Brick physics).
 
 **To build or change a film, use `motion-kit/` (code, art, tools) and follow `motion-kit/README.md` step by step.** This file holds the rules; add every new piece of feedback here in the same turn you act on it.
 
@@ -9,7 +9,7 @@ Source: Uriel's direction in chat, Nov 19–23 2026. Last updated: 2026-11-23 (b
 - Founder split-screen. Motion on the **top half**, founder on the **bottom half**.
 - Key spoken lines go from split to **full-screen founder**; overlays on full screen stay minimal and non-invasive.
 - First drafts: 720x1280 vertical, 23.976 fps. Test footage: `highlights/highlights_1x1.mp4`.
-- Motion is code-rendered (canvas / three.js). Never generate video in AIVideo unless Uriel asks for it. AIVideo reference images are style references only: recreate their texture, treatment and vector style in code.
+- Motion is code-rendered (canvas / three.js). Never generate video in AIVideo unless the creative lead asks for it. AIVideo reference images are style references only: recreate their texture, treatment and vector style in code.
 
 ## Animation rules (apply to every style)
 - Show the detail that makes the line click. Match the action to the idea.
@@ -59,7 +59,7 @@ Source: Uriel's direction in chat, Nov 19–23 2026. Last updated: 2026-11-23 (b
 
 ## Delivery
 - Look at stills of every changed beat before rendering; look at one frame of the final MP4 after.
-- Never overwrite: bump the version (`_vNN_`) and keep old files. Brand versions go to `motion-tests/brand/`, originals to `motion-tests/<NN-style>/` on Uriel's Mac.
+- Never overwrite: bump the version (`_vNN_`) and keep old files. Brand versions go to `motion-tests/brand/`, originals to `motion-tests/<NN-style>/` in the team's shared CCE folder (`$CCE_ROOT`).
 - After delivering, reply with what changed in a few lines and the folder path; no long recaps.
 
 ## Compliance in graphics
@@ -90,3 +90,10 @@ Source: Uriel's direction in chat, Nov 19–23 2026. Last updated: 2026-11-23 (b
   - Starbursts and rings grow in and shrink out within about a second; no 2D accent sits on screen unchanged.
   - Every spoken idea moves something (a hop on "0% card", a ripple up the stack on "20,000", the yellow brick rocking on "mid to lower"). Figures spring up from the ground instead of falling into frame from the edge.
   - The sound list is generated from the same timing constants as the picture, so every landing, hop and build step has a sound exactly on its frame.
+- **Text layout (all styles, round 3 feedback)** — every label is placed from measured bounds, never by eye:
+  - Labels inside a box or card are measured (`measureText`) and shrunk to fit the space left of or right of the icon with a margin. A label never touches or crosses its box edge.
+  - Box numbers sit in their corner, clear of the icon, so the icon is scaled down and moved in.
+  - A headline or caption keeps clear of the object it names and of any moving accents (coins, rings, trails). Moving accents travel on paths that stay outside the text's bounds for the whole move, not only on the frame that was checked.
+  - In motion-only moments the panel is scaled up (about 1.25x in the 2D styles), so check those spans separately: things that fit in the split layout can collide there.
+- **06 Money, motion-only clock** — the clock is 1.4x at the top half and the coins orbit it at a fixed radius outside the face; "REALLY QUICK" sits below the orbit.
+- **04 Instructional, six-box sheet** — box number in the corner, icon in the left half at 0.78x, label fitted into the right half and centred on the box's height.
