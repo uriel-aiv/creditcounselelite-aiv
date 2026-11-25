@@ -125,7 +125,7 @@ function spr(ctx, c, x, y, s = 1, rot = 0, alpha = 1, sx = 1) {
   ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s * sx / S, s / S); ctx.drawImage(c, -c.width / 2, -c.height / 2); ctx.restore();
 }
 const ICON = {
-  dollar: (x) => { x.font = '800 96px UI'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('$', 50, 54); },
+  dollar: (x) => { x.lineWidth = 9; x.beginPath(); x.arc(50, 50, 40, 0, TAU); x.stroke(); x.lineWidth = 6; x.beginPath(); x.arc(50, 50, 24, 0, TAU); x.stroke(); x.fillRect(46, 34, 8, 32); },   // a coin (no currency symbols on screen)
   card: (x) => { x.lineWidth = 8; x.beginPath(); x.roundRect(6, 22, 88, 58, 8); x.stroke(); x.fillRect(6, 34, 88, 10); x.fillRect(64, 62, 20, 9); },
   clock: (x) => { x.lineWidth = 7; x.beginPath(); x.arc(50, 50, 42, 0, TAU); x.stroke(); for (let a = 0; a < 12; a++) { const r = a * TAU / 12; x.lineWidth = a % 3 ? 4 : 7; x.beginPath(); x.moveTo(50 + Math.cos(r) * 30, 50 + Math.sin(r) * 30); x.lineTo(50 + Math.cos(r) * 36, 50 + Math.sin(r) * 36); x.stroke(); } },
   percent: (x) => { x.lineWidth = 9; x.beginPath(); x.arc(28, 28, 14, 0, TAU); x.stroke(); x.beginPath(); x.arc(72, 72, 14, 0, TAU); x.stroke(); x.lineWidth = 11; x.beginPath(); x.moveTo(80, 12); x.lineTo(20, 88); x.stroke(); },

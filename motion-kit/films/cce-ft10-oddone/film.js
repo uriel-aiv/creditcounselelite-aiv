@@ -285,33 +285,79 @@ function endCard(ctx, t, IMG) {
 function question(ctx, t, a, b, s, y = Y(120)) { const k = P(t, a, a + 0.3) * (1 - P(t, b, b + 0.3)); txt(ctx, s, 540, y + (1 - k) * 20, 52, 600, C.white, 'center', k); }
 function shield(ctx, x, y, s, p, a = 1) { const pts = [[x, y - 150 * s], [x + 125 * s, y - 100 * s], [x + 110 * s, y + 40 * s], [x, y + 150 * s], [x - 110 * s, y + 40 * s], [x - 125 * s, y - 100 * s], [x, y - 150 * s]]; polyOn(ctx, pts, p, 0, LW, a); }
 function bankShape(ctx, x, y, s, p, a = 1) { polyOn(ctx, [[x - 120 * s, y - 50 * s], [x, y - 130 * s], [x + 120 * s, y - 50 * s], [x - 120 * s, y - 50 * s]], clamp(p * 2), 0, LW, a); rectOn(ctx, x, y + 40 * s, 200 * s, 150 * s, clamp(p * 2 - 1), a); }
-// Q1 0-6: will this hurt my credit? -> protected; we optimize your profile before applications
+// solid dot that travels a polyline (the thing that matters moves; everything else is outline)
+function dotAt(ctx, pts, k, r = 12, a = 1) { if (k <= 0 || k >= 1 || a <= 0.01) return; const [x, y] = along(pts, k); ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); ctx.restore(); }
+function ripple(ctx, x, y, t, t0, r0 = 20, r1 = 120, a = 1) { const f = prog(t, t0, t0 + 0.7); if (f <= 0 || f >= 1) return; circleOn(ctx, x, y, lerp(r0, r1, E.outCubic(f)), 1, { w: 2.5, a: (1 - f) * a }); }
+function check(ctx, x, y, s, p, a = 1, col = null) { const c0 = C.white; if (col) C.white = col; polyOn(ctx, [[x - 22 * s, y], [x - 6 * s, y + 16 * s], [x + 24 * s, y - 18 * s]], p, 0, LW + 1.5, a); C.white = c0; }
+// Q1 0-6: will this hurt my credit? -> a solid circle (you) under pressure: lines press in from all sides; a ring closes
+// around it and the lines deflect (protected). Then: scattered dots snap into order (optimize the profile) before a line
+// is allowed out to three empty circles (applications). Shapes and motion only.
 function q1(ctx, t) {
   if (t > 6.4) return; const ex = outK(t, 6.0);
   question(ctx, t, 0.1, 5.8, 'Will this hurt my credit?');
-  const up = P(t, 3.0, 3.5, E.inOutCubic), cx = lerp(540, 285, up), cy = Y(470);
-  circleOn(ctx, cx, cy, 90 * clamp(pop(t, 0.4)), P(t, 0.4, 0.9) * ex, { fill: P(t, 3.4, 3.9) * ex, col: C.white });
-  shield(ctx, cx, cy, 1.25, P(t, 1.7, 2.4, E.inOutSine) * ex, ex);
-  cap(ctx, 'Your profile', cx, cy + 250, P(t, 3.4, 3.7) * ex, 24);
-  // applications only after the profile is ready
-  const ap = [[700, Y(300)], [860, Y(470)], [700, Y(640)]];
-  ap.forEach(([x, y], i) => { rectOn(ctx, x, y, 110, 140, P(t, 5.0 + i * 0.1, 5.4 + i * 0.1) * ex, ex); });
-  lineOn(ctx, cx + 150, cy, 600, cy, P(t, 4.6, 5.0, E.outCubic) * ex, 0, LW, ex); if (t > 4.9) head(ctx, 600, cy, 0, ex * P(t, 4.9, 5.0));
-  cap(ctx, 'Applications', 770, Y(760), P(t, 5.5, 5.8) * ex, 24);
+  const cx = 540, cy = Y(520), shrink = P(t, 3.0, 3.5, E.inOutCubic), X0 = lerp(cx, 260, shrink);
+  const kc = clamp(pop(t, 0.35)) * ex, ring = P(t, 1.75, 2.35, E.inOutCubic);
+  // pressure: 12 lines move in toward the circle; after the ring closes they bounce back out
+  const g = 1 - shrink;
+  if (g > 0.01) for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * TAU + 0.13, inn = P(t, 0.6 + (i % 3) * 0.08, 1.6, E.inOutSine), back = P(t, 2.3, 2.9, E.outBack);
+    const r0 = lerp(340, 200, inn) + back * 120, r1 = r0 + 80;
+    lineOn(ctx, cx + Math.cos(a) * r0, cy + Math.sin(a) * r0 * 0.72, cx + Math.cos(a) * r1, cy + Math.sin(a) * r1 * 0.72, 1, 0, LW, ex * g * (1 - P(t, 2.6, 3.0)));
+  }
+  const shake = t > 1.0 && t < 1.75 ? Math.sin(t * 60) * 5 * (1 - ring) : 0;
+  circleOn(ctx, X0 + shake * g, cy, lerp(110, 120, shrink) * kc, 1, { fill: g * ex, col: C.white, a: ex });
+  circleOn(ctx, X0, cy, 175, ring, { w: LW + 2, a: ex * g, start: Math.PI / 2 });
+  if (t > 2.35) ripple(ctx, X0, cy, t, 2.35, 175, 300, ex * g);
+  cap(ctx, 'Protected', X0, cy + 250, P(t, 2.4, 2.7) * g * ex, 26);
+  // optimize: 9 dots inside the circle jump from scattered to a neat 3x3
+  if (t > 3.0) {
+    const ord = P(t, 3.6, 4.4, E.inOutCubic), r = mulberry32(31);
+    for (let i = 0; i < 9; i++) { const sx = X0 + (r() - 0.5) * 150, sy = cy + (r() - 0.5) * 150, gx = X0 + ((i % 3) - 1) * 52, gy = cy + (Math.floor(i / 3) - 1) * 52;
+      ctx.save(); ctx.globalAlpha = ex * P(t, 3.2, 3.45); ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(lerp(sx, gx, ord), lerp(sy, gy, ord), 12, 0, TAU); ctx.fill(); ctx.restore(); }
+    cap(ctx, 'Profile first', X0, cy + 200, P(t, 3.6, 3.9) * ex, 24);
+    if (t > 4.4) ripple(ctx, X0, cy, t, 4.4, 120, 220, ex);
+  }
+  // only then: the line goes out and the three circles light, one by one
+  path(ctx, [[X0 + 140, cy], [700, cy]], P(t, 4.75, 5.15, E.outCubic) * ex);
+  [[810, cy - 150], [860, cy], [810, cy + 150]].forEach(([x, y], i) => {
+    circleOn(ctx, x, y, 44, P(t, 3.9 + i * 0.1, 4.3 + i * 0.1), { a: ex * 0.35, w: 2.5 });
+    const on = P(t, 5.2 + i * 0.18, 5.4 + i * 0.18); circleOn(ctx, x, y, 44, on, { a: ex, fill: on >= 1 ? ex : 0, col: C.white });
+  });
+  cap(ctx, 'Then applications', 830, cy + 250, P(t, 5.3, 5.6) * ex, 24);
 }
-// Q2 7-14.8: is this a loan? no, we don't lend money; we teach you to access it directly from the banks, at the best terms
+// Q2 7-14.8: is this a loan? -> no: the money line from us to you is cut; we teach (a ring passes to you);
+// you go directly to the banks; of the offers, the best terms is the one solid bar
 function q2(ctx, t) {
   if (t < 6.9 || t > 15.2) return; const ex = outK(t, 14.75);
   question(ctx, t, 7.0, 14.6, 'Is this a loan?');
-  const f1 = outK(t, 9.9);
-  if (f1 > 0.01) { circleOn(ctx, 540, Y(470), 150 * clamp(pop(t, 7.4)), P(t, 7.4, 7.9) * f1, { a: f1 }); txt(ctx, 'LOAN', 540, Y(490), 60, 600, C.white, 'center', P(t, 7.6, 7.9) * f1); lineOn(ctx, 410, Y(600), 670, Y(340), P(t, 8.4, 8.75, E.outCubic) * f1, 0, 6, f1); }
-  if (t > 10.0) {
-    circleOn(ctx, 220, Y(470), 46 * clamp(pop(t, 10.2)), P(t, 10.2, 10.5) * ex, { fill: ex, col: C.white }); cap(ctx, 'You', 220, Y(570), P(t, 10.4, 10.7) * ex, 24);
-    bankShape(ctx, 820, Y(470), 1, P(t, 12.0, 12.6, E.inOutSine) * ex, ex); cap(ctx, 'The banks', 820, Y(650), P(t, 12.4, 12.7) * ex, 24);
-    lineOn(ctx, 290, Y(470), 680, Y(470), P(t, 11.2, 11.8, E.inOutCubic) * ex, 0, LW, ex); if (t > 11.7) head(ctx, 680, Y(470), 0, ex);
-    // best terms: three bars, one solid
-    [0, 1, 2].forEach((i) => { const w = [260, 200, 330][i], y = Y(700 + i * 44), k = P(t, 13.4 + i * 0.1, 13.8 + i * 0.1, E.outCubic) * ex; if (i === 2) { ctx.save(); ctx.globalAlpha *= k; ctx.fillStyle = C.white; ctx.fillRect(540 - w / 2, y - 12, w * k, 24); ctx.restore(); } else rectOn(ctx, 540, y, w, 24, k, ex); });
+  const US = [540, Y(320)], YOU = [210, Y(600)], BANK = [870, Y(600)];
+  const ku = clamp(pop(t, 7.3)) * ex, kyou = clamp(pop(t, 7.45)) * ex;
+  circleOn(ctx, US[0], US[1], 84 * ku, 1, { a: ex }); cap(ctx, 'Us', US[0], US[1] - 110, P(t, 7.4, 7.7) * ex, 24);
+  circleOn(ctx, YOU[0], YOU[1], 60 * kyou, 1, { a: ex, fill: P(t, 10.6, 11.0) * ex, col: C.white }); cap(ctx, 'You', YOU[0], YOU[1] + 90, P(t, 7.6, 7.9) * ex, 24);
+  // the loan line: money (solid dot) would flow us -> you; on "no" the line breaks and the dot drops away
+  const L1 = [[US[0] - 66, US[1] + 52], [YOU[0] + 48, YOU[1] - 38]], cut = P(t, 8.1, 8.35, E.outCubic), drop = P(t, 8.35, 9.0, E.inCubic);
+  const lineA = 1 - P(t, 9.2, 9.6);
+  if (t > 7.6) {
+    const mx = lerp(L1[0][0], L1[1][0], 0.5), my = lerp(L1[0][1], L1[1][1], 0.5), gap = 34 * cut, dx = (L1[1][0] - L1[0][0]), dy = (L1[1][1] - L1[0][1]), L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
+    lineOn(ctx, L1[0][0], L1[0][1], mx - ux * gap, my - uy * gap, P(t, 7.6, 8.0), 0, LW, ex * lineA);
+    lineOn(ctx, mx + ux * gap, my + uy * gap, L1[1][0], L1[1][1], P(t, 7.75, 8.0), 0, LW, ex * lineA);
+    cap(ctx, 'Loan', mx + 60, my - 30, P(t, 7.7, 7.9) * (1 - cut) * ex, 24, 'left');
+    const fl = ((t - 7.6) * 0.9) % 1; if (t < 8.1) dotAt(ctx, L1, fl, 11, ex);
+    if (t > 8.1 && drop < 1) { ctx.save(); ctx.globalAlpha = ex * (1 - drop); ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(mx, my + drop * 300, 11, 0, TAU); ctx.fill(); ctx.restore(); }
   }
+  // teach: three rings ripple from us to you; you turn solid (you know how)
+  if (t > 10.2 && t < 11.2) for (let i = 0; i < 3; i++) { const k = prog(t, 10.25 + i * 0.15, 10.85 + i * 0.15); if (k > 0 && k < 1) { const [x, y] = along([US, YOU], E.inOutSine(k)); circleOn(ctx, x, y, 26, 1, { w: 2.5, a: Math.sin(Math.PI * k) * ex }); } }
+  cap(ctx, 'We teach', (US[0] + YOU[0]) / 2 - 40, (US[1] + YOU[1]) / 2 - 30, P(t, 10.3, 10.6) * (1 - P(t, 11.6, 11.9)) * ex, 24, 'right');
+  // direct: you -> the banks, a straight line under us; money flows bank -> you
+  const kb = clamp(pop(t, 11.9)) * ex;
+  if (t > 11.8) { const bk = BANK; rectOn(ctx, bk[0], bk[1], 150 * clamp(kb), 150 * clamp(kb), P(t, 11.9, 12.4), ex); cap(ctx, 'The banks', bk[0], bk[1] + 125, P(t, 12.4, 12.7) * ex, 24); }
+  const D = [[YOU[0] + 76, YOU[1]], [BANK[0] - 90, BANK[1]]];
+  path(ctx, D, P(t, 11.4, 12.0, E.inOutCubic) * ex, 0, { head: true });
+  cap(ctx, 'Directly', 540, YOU[1] - 26, P(t, 11.8, 12.1) * (1 - P(t, 13.2, 13.4)) * ex, 24);
+  if (t > 12.6) for (let i = 0; i < 3; i++) { const f = ((t - 12.6) * 0.8 + i / 3) % 1; dotAt(ctx, [D[1], D[0]], f, 9, ex * P(t, 12.6, 12.9)); }
+  // best terms: offers as bars; the shortest (lowest cost) fills solid
+  const bars = [300, 420, 180, 360], bx0 = 540 - 210;
+  bars.forEach((w, i) => { const y = Y(760 + i * 40), k = P(t, 13.4 + i * 0.07, 13.75 + i * 0.07, E.outCubic) * ex; if (i === 2) { rectOn(ctx, bx0 + w / 2, y, w, 22, k, ex); if (t > 13.9) { ctx.save(); ctx.globalAlpha = ex; ctx.fillStyle = C.white; ctx.fillRect(bx0, y - 11, w * P(t, 13.9, 14.2, E.outCubic), 22); ctx.restore(); ripple(ctx, bx0 + w / 2, y, t, 14.2, 20, 90, ex); } } else rectOn(ctx, bx0 + w / 2, y, w, 22, k, ex * 0.45); });
 }
 // Q3 15.6-19.6: I'm too busy -> 30 minutes a day: a day as 48 half-hour squares; only one is filled (the odd one out)
 function q3(ctx, t) {
@@ -331,35 +377,66 @@ function q3(ctx, t) {
   txt(ctx, '30 min', ox, y0 - sz / 2 - 60, 46, 600, C.white, 'center', P(t, 17.7, 18.0) * ex);
   cap(ctx, 'A day', 540, y0 + rows * (sz + gap) + 20, P(t, 16.8, 17.1) * ex, 24);
 }
-// Q4 20.5-29: just a sales pitch? -> a real strategy session, whether you work with us or not
+// a small strategy map (three nodes on a zig-zag path) drawn at x,y with scale s
+function plan(ctx, x, y, s, p, a = 1) {
+  const pts = [[x - 90 * s, y + 40 * s], [x - 30 * s, y - 30 * s], [x + 30 * s, y + 30 * s], [x + 90 * s, y - 40 * s]];
+  polyOn(ctx, pts, p, 0, LW, a); pts.forEach(([px, py], i) => { if (p * 3 >= i) { ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(px, py, (i === 3 ? 11 : 7) * s, 0, TAU); ctx.fill(); ctx.restore(); } });
+}
+// Q4 20.5-29: just a sales pitch? -> a real strategy session: two seats at a table, a plan drawn between them;
+// whether you work with us or not, the plan goes with you down both roads
 function q4(ctx, t) {
   if (t < 20.4 || t > 29.4) return; const ex = outK(t, 28.95);
   question(ctx, t, 20.5, 28.8, 'Is the call a sales pitch?');
-  const f1 = outK(t, 24.3);
+  const f1 = outK(t, 24.25);
   if (f1 > 0.01) {
-    circleOn(ctx, 360, Y(450), 70 * clamp(pop(t, 22.4)), P(t, 22.4, 22.8) * f1, { a: f1 }); circleOn(ctx, 720, Y(450), 70 * clamp(pop(t, 22.55)), P(t, 22.55, 22.95) * f1, { a: f1 });
-    lineOn(ctx, 300, Y(600), 780, Y(600), P(t, 22.9, 23.4, E.outCubic) * f1, 0, LW, f1);
-    txt(ctx, 'Strategy session', 540, Y(720), 46, 600, C.white, 'center', P(t, 23.3, 23.6) * f1);
+    // the pitch: a row of arrows all pushing one way into a small circle (one-way pressure), then crossed out
+    const mk = P(t, 20.9, 21.3) * (1 - P(t, 22.3, 22.6)), mx = 540, my = Y(470), push = (t - 20.9) * 1.6 % 1;
+    for (let r = -1; r <= 1; r++) for (let i = 0; i < 3; i++) { const f = (push + i / 3 + r * 0.17 + 1) % 1, x0 = lerp(180, 560, f), yy = my + r * 70, al = mk * f1 * (0.35 + 0.65 * Math.sin(Math.PI * f)); lineOn(ctx, x0, yy, x0 + 100, yy, 1, 0, LW + 1, al); head(ctx, x0 + 100, yy, 0, al, 20); }
+    circleOn(ctx, 760, my, 70, P(t, 20.9, 21.2), { a: mk * f1 });
+    const sl = 220;   // cross centred on the whole figure (arrows 180..680 + circle 690..830 -> centre ~505)
+    lineOn(ctx, 505 - sl * 1.4, my - sl * 0.75, 505 + sl * 1.4, my + sl * 0.75, P(t, 21.8, 22.05, E.outCubic), 0, 7, mk * f1);
+    // the session: two seats, a table, and a plan that draws itself between them
+    const sk = P(t, 22.4, 22.8) * f1;
+    circleOn(ctx, 300, Y(430), 60 * clamp(pop(t, 22.45)), P(t, 22.45, 22.8), { a: sk }); circleOn(ctx, 780, Y(430), 60 * clamp(pop(t, 22.6)), P(t, 22.6, 22.95), { a: sk });
+    lineOn(ctx, 220, Y(560), 860, Y(560), P(t, 22.8, 23.2, E.outCubic), 0, LW, sk);
+    plan(ctx, 540, Y(440), 1.0, P(t, 23.0, 23.9, E.inOutSine), sk);
+    cap(ctx, 'Strategy session', 540, Y(660), P(t, 23.3, 23.6) * f1, 26);
   }
-  if (t > 24.3) {
-    const st = [200, Y(560)], fk = [520, Y(560)];
-    lineOn(ctx, st[0], st[1], fk[0], fk[1], P(t, 24.45, 24.9, E.outCubic) * ex, 0, LW, ex);
+  if (t > 24.2) {
+    const st = [170, Y(560)], fk = [470, Y(560)];
+    const up = bez(fk, [660, Y(560)], [840, Y(360)]), dn = bez(fk, [660, Y(560)], [840, Y(760)]);
+    lineOn(ctx, st[0], st[1], fk[0], fk[1], P(t, 24.35, 24.8, E.outCubic), 0, LW, ex);
+    polyOn(ctx, up, P(t, 25.0, 25.6, E.inOutSine), 0, LW, ex); polyOn(ctx, dn, P(t, 25.6, 26.2, E.inOutSine), 0, LW, ex);
+    // the plan rides from the session to the fork, then a copy goes down each road
+    const ride = P(t, 24.3, 24.9, E.inOutCubic), pr = [lerp(540, fk[0] - 60, ride), lerp(Y(440), fk[1] - 80, ride)];
+    if (t < 25.2) plan(ctx, pr[0], pr[1], lerp(1, 0.55, ride), 1, ex);
+    const r1 = 0.55 * P(t, 25.2, 25.8, E.inOutSine), r2 = 0.55 * P(t, 25.9, 26.5, E.inOutSine);
+    if (t >= 25.2) { const [x, y] = along(up, r1); plan(ctx, x - 40, y - 60, 0.5, 1, ex); }
+    if (t >= 25.9) { const [x, y] = along(dn, r2); plan(ctx, x + 40, y - 60, 0.5, 1, ex); }
+    circleOn(ctx, 840, Y(360), 26, P(t, 25.55, 25.8), { a: ex, fill: P(t, 25.8, 26.0) * ex, col: C.white }); circleOn(ctx, 840, Y(760), 26, P(t, 26.15, 26.4), { a: ex, fill: P(t, 26.4, 26.6) * ex, col: C.white });
+    ripple(ctx, 840, Y(360), t, 25.8, 26, 90, ex); ripple(ctx, 840, Y(760), t, 26.4, 26, 90, ex);
     circleOn(ctx, st[0], st[1], 16, 1, { fill: ex, col: C.white, a: ex });
-    const up = bez(fk, [700, Y(560)], [860, Y(380)]), dn = bez(fk, [700, Y(560)], [860, Y(740)]);
-    polyOn(ctx, up, P(t, 25.2, 25.8, E.inOutSine) * ex, 0, LW, ex); polyOn(ctx, dn, P(t, 25.4, 26.0, E.inOutSine) * ex, 0, LW, ex);
-    circleOn(ctx, 860, Y(380), 26, P(t, 25.75, 26.0) * ex, { a: ex }); circleOn(ctx, 860, Y(740), 26, P(t, 25.95, 26.2) * ex, { a: ex });
-    cap(ctx, 'Work with us', 860, Y(320), P(t, 26.6, 26.9) * ex, 22); cap(ctx, 'Or not', 860, Y(820), P(t, 28.0, 28.3) * ex, 22);
+    cap(ctx, 'Work with us', 840, Y(300), P(t, 25.4, 25.7) * ex, 22); cap(ctx, 'Or not', 840, Y(840), P(t, 26.1, 26.4) * ex, 22);
+    cap(ctx, 'The path is yours', 300, Y(700), P(t, 26.7, 27.0) * ex, 22);
   }
 }
-// close 29.6-34.4: you've made it this far; you're serious, don't stall now
+// close 26.9-34.4: a road of ten stops; you've filled nine (this far); you're serious: your dot grows solid;
+// don't stall now: it launches to the last stop; then an arrow points down to the link
 function q5(ctx, t) {
-  if (t < 29.5) return;
-  const y = Y(500), pts = [[120, y], [960, y]], prog_ = P(t, 29.7, 31.0, E.inOutSine);
-  lineOn(ctx, 200, y, 840, y, 1, 0, 2.5, 0.35 * P(t, 29.6, 29.9));
-  for (let i = 0; i < 9; i++) { const x = 200 + i * 80; const on = prog_ * 9 > i; circleOn(ctx, x, y, 14, 1, { fill: on ? 1 : 0, col: C.white, a: P(t, 29.6 + i * 0.03, 29.9 + i * 0.03) }); }
-  txt(ctx, 'This far', 200 + Math.min(8, Math.floor(prog_ * 9)) * 80, y - 60, 40, 600, C.white, 'center', P(t, 31.0, 31.3) * (1 - P(t, 32.0, 32.3)));
-  lineOn(ctx, 840, y, 900, y, P(t, 33.0, 33.4, E.outCubic), 0, 5, 1); if (t > 33.35) head(ctx, 900, y, 0, 1, 22);
-  txt(ctx, "Don't stall now.", 540, y + 160, 64, 600, C.white, 'center', P(t, 32.9, 33.2));
+  if (t < 29.2) return;
+  const y = Y(520), xs = (i) => 140 + i * 89, cur = Math.min(8, Math.floor(P(t, 29.3, 30.0, E.inOutSine) * 9));
+  lineOn(ctx, xs(0), y, xs(9), y, P(t, 29.25, 29.6), 0, 2.5, 0.35);
+  for (let i = 0; i < 10; i++) { const on = i <= cur && t > 29.3 + i * 0.07; circleOn(ctx, xs(i), y, 13, P(t, 29.25 + i * 0.03, 29.45 + i * 0.03), { fill: on && i < 9 ? 1 : 0, col: C.white }); }
+  // you (the ninth dot): serious = grows solid, then a stall-shake, then the launch
+  const grow = P(t, 29.8, 30.2, E.outBack), launch = P(t, 30.9, 31.25, E.inOutCubic), shake = t > 30.5 && t < 30.9 ? Math.sin(t * 70) * 5 : 0;
+  const ux = lerp(xs(8), xs(9), launch) + shake;
+  ctx.save(); ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(ux, y, 13 + 15 * grow * (1 - 0.4 * launch), 0, TAU); ctx.fill(); ctx.restore();
+  if (launch > 0 && launch < 1) for (let k = 1; k < 5; k++) lineOn(ctx, ux - 30 - k * 22, y - 12 + k * 6, ux - 14 - k * 22, y - 12 + k * 6, 1, 0, 2, (1 - launch) * 0.7);
+  ripple(ctx, xs(9), y, t, 31.25, 20, 140);
+  cap(ctx, 'This far', xs(8), y - 70, P(t, 29.0, 29.3) * (1 - P(t, 30.4, 30.6)), 24);
+  txt(ctx, "Don't stall now.", 540, y + 170, 64, 600, C.white, 'center', P(t, 30.75, 31.05));
+  // the link below
+  const dn = P(t, 32.3, 32.9, E.outCubic); if (dn > 0) { path(ctx, [[540, y + 230], [540, y + 420]], dn); ripple(ctx, 540, y + 440, t, 32.9, 10, 80); }
 }
 
 // ------------------------------------------------------------------ layout over time

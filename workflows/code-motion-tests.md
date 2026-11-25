@@ -42,6 +42,14 @@ Source: Uriel's direction in chat, Nov 19–23 2026. Last updated: 2026-11-23 (b
 - Every scene must show what Brandon is saying at that moment (feedback 2026-11-24, v02): read the transcript line by line and draw the specific thing (a statement with a credit row for "statement credit", a week calendar packed with shifts for "busboy", a day as 48 half-hour squares with one filled for "30 minutes a day", map areas for "different in your area"). Generic shapes or label pills that only repeat the words are not enough; add detail.
 - Before a voiceover-only moment, check the source frames: switch to motion-only before the baked graphic appears, not after.
 - In voiceover-only moments the background must fill the whole frame (no hard edge or black band above it).
+- Feedback 2026-11-24 (v03 and round 2):
+  - **Strike-throughs, Xs and cut lines** sit dead centre on their target, on X and Y: measure the real glyph box (`measureText` bounds, cap height of "H") or the object's bounding box; never place them by eye. Applies to every style.
+  - **10 Odd One Out (Visualize Value)** shows no objects at all: no gauges, banks, megaphones, documents, check marks or icons. Only shape and movement metaphors: dots, circles, rings, lines, squares, grids, forks, paths, ripples; solid vs outline marks the one that matters.
+  - **09 Desktop Mind** explains with real-looking app windows (sidebars, toolbars, segmented controls, toggles, calendar grids, charts, map pins, album tiles), never a window that only holds text. In voiceover-only moments don't scale the desktop up (windows must stay off the frame edges).
+  - **04 Instructional Diagrams** people are manual pictograms: head with nose, neck, tapered jacket with white collar and tie, capsule limbs with hands and shoes, paper-coloured outline on front limbs. Thought clouds are bumpy outlines, not loose arcs, and never overlap a head or title.
+  - **Toy Brick**: no little toy figures standing on a card (it reads as a kid). Brick people use adult proportions (long legs, shoulder plate, small head) and stand clear of the card and titles; extra cards represent extra card users.
+  - **06 Money**: the dot-matrix "dollar" sprite is a coin now; no "$" anywhere, graphics included.
+  - Round 2 clips: 04 Video 19 (six boxes), Toy Brick Video 17 (moving limits), 06 Video 12 (the fee), 09 VSL #5 (skill for life), 10 VSL #1 (45 rules), 11 Video 14 (small transaction), 12 Video 6 (transaction activity), 17 Video 13 (fine print). Skipped: the credit-repair timeline clips and VSL #3 (bankruptcy-removal claims), since CCE isn't credit repair and never promises outcomes.
 - Full steps: `motion-kit/README.md` → "Footage tests".
 
 ## Delivery

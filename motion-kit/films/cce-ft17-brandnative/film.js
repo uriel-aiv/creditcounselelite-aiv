@@ -93,7 +93,7 @@ function brush(ctx, x0, y0, x1, y1, bend, w, p, seed = 1, color = C.white) {
   for (let i = 0; i <= m; i++) {
     const k = i / n, q = 1 - k, x = q * q * x0 + 2 * q * k * cx + k * k * x1, y = q * q * y0 + 2 * q * k * cy + k * k * y1;
     const dx = 2 * q * (cx - x0) + 2 * k * (x1 - cx), dy = 2 * q * (cy - y0) + 2 * k * (y1 - cy), d = Math.hypot(dx, dy) || 1;
-    const prof = Math.pow(Math.sin(Math.PI * Math.min(1, k * 1.15 + 0.04)), 0.55) * (1 - 0.45 * k), ww = w * prof * (0.92 + 0.16 * r());
+    const prof = Math.pow(Math.sin(Math.PI * Math.min(1, k * 0.96 + 0.02)), 0.35) * (1 - 0.15 * k), ww = w * prof * (0.92 + 0.16 * r());
     L.push([x - (dy / d) * ww / 2, y + (dx / d) * ww / 2]); R.push([x + (dy / d) * ww / 2, y - (dx / d) * ww / 2]);
   }
   ctx.save(); ctx.fillStyle = color; ctx.beginPath(); L.forEach((v, i) => (i ? ctx.lineTo(...v) : ctx.moveTo(...v))); R.reverse().forEach((v) => ctx.lineTo(...v)); ctx.closePath(); ctx.fill(); ctx.restore();
@@ -173,7 +173,10 @@ function lock(ctx, cx, cy, s, open, k = 1, col = C.gold) {
 }
 function strikePlaque(ctx, t, label, y, tin, tstrike, seed) {
   plaque(ctx, 540, y, 600, 140, kIn(t, tin), (x) => { txt(x, label, 0, 30, 84, DISPLAY, t > tstrike + 0.1 ? 'rgba(255,255,255,0.55)' : C.white, { track: 2 }); });
-  brush(ctx, 250, y + 22, 830, y - 18, -10, 26, P(t, tstrike, tstrike + 0.22, E.outCubic), seed, C.white);
+  // strike centred on the word's real glyph box (X and Y), slightly wider than the word, a small symmetric tilt
+  ctx.save(); ctx.font = font(84, 400, DISPLAY); ctx.letterSpacing = '2px'; ctx.textAlign = 'center'; const m = ctx.measureText(label), capH = ctx.measureText('H').actualBoundingBoxAscent; ctx.restore();
+  const cx = 540 + (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2, cy = y + 30 - capH / 2, hw = (m.actualBoundingBoxRight + m.actualBoundingBoxLeft) / 2 + 30;
+  brush(ctx, cx - hw, cy + 12, cx + hw, cy - 12, 0, 24, P(t, tstrike, tstrike + 0.22, E.outCubic), seed, C.white);
 }
 // A: the real problem isn't income, side hustle, or even the credit score (0-5.85; motion-only to 2.85, then split)
 function sA(ctx, t) {

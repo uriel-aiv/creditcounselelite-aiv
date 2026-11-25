@@ -148,7 +148,9 @@ function buildWorld() {
   // footage test (Video 24): six profile boxes, a card, brick people, an online-store screen
   G.boxes = Array.from({ length: 6 }, (_, i) => add('bx', B(2, 2, i === 5 ? 'yellow' : 'green')));
   G.auCard = add('auc', cardModel('blue'));
-  G.folk = [['red', 'navy'], ['teal', 'blue'], ['yellow', 'navy'], ['green', 'blue'], ['white', 'navy']].map(([torso, legs]) => { const g = new THREE.Group(); const l = B(2, 1, legs); const tb = B(2, 1, torso); tb.position.y = 1.2; const hd = R(0.62, 'yellow'); hd.position.y = 2.4; g.add(l, tb, hd); return add('fk', g); });
+  // grown-up brick figures: long legs, a torso with a shoulder plate, a smaller head (adult proportions, not toy-kid)
+  G.folk = [['red', 'navy'], ['teal', 'blue'], ['navy', 'black'], ['green', 'navy'], ['white', 'navy']].map(([torso, legs]) => { const g = new THREE.Group(); const l = B(2, 1, legs, 2.4, false); const tb = B(2, 1, torso, 1.6, false); tb.position.y = 2.4; const shp = B(3, 1, torso, 0.4); shp.position.y = 4.0; const hd = R(0.5, 'tan', 0.9); hd.position.y = 4.4; g.add(l, tb, shp, hd); return add('fk', g); });
+  G.auMini = [add('am', cardModel('yellow')), add('am', cardModel('white'))];
   G.fixY = add('fy', B(2, 2, 'yellow')); G.fixG = add('fg', B(2, 2, 'green'));
   G.screen = add('scr', (() => { const g = new THREE.Group(); g.add(B(6, 1, 'black', 1.2)); const sc = B(6, 1, 'black', 3.6, false); sc.position.set(0, 1.2, -0.0); g.add(sc); const fc = B(5, 0.2, 'blue', 2.8, false); fc.position.set(0, 1.6, 0.5); g.add(fc); return g; })());
   hideAll();
@@ -157,7 +159,7 @@ const hideAll = () => SCN.children.forEach((o) => { if (!o.isLight) o.visible = 
 
 // ------------------------------------------------------------------ camera: keyed target/zoom with a spring, extra yaw for orbits
 const rowX = (m) => -18 + (m - 1) * 1.56;
-const CAMK = [[0, [0, 0.6, 0], 1.3], [4.2, [0.6, 0.6, 0], 1.45], [7.2, [0, 1.6, 0], 1.6], [10.6, [0, 1.6, 0.8], 1.3], [14.1, [0, 2.0, -1.2], 1.25]];
+const CAMK = [[0, [0, 0.6, 0], 1.3], [4.2, [0.6, 0.6, 0], 1.45], [7.2, [0, 1.6, 0], 1.6], [10.6, [0.5, 2.0, -2.6], 1.35], [14.1, [0.5, 2.2, -3.0], 1.3]];
 function setCamera(t) {
   const v = springKeys(t, CAMK.map(([a, tg, z]) => [a, [...tg, z]]), { stiffness: 55, damping: 13 });
   const yaw = 0.785 + 0.06 * Math.sin(t * 0.35) + 0.5 * P(t, 10.6, 14.0, E.inOutSine);
@@ -315,12 +317,15 @@ function k1(t) {
   else if (t > 1.2) OV.over.push({ type: 'big', s: 'YOUR PROFILE', x: 540, y: Y(230), size: 120, align: 'center', k: clamp(sp(t, 1.2, SPRING.bouncy)) * outK(t, 3.95, 0.2), hit: -1 });
 }
 // k3 7.3-16.7: adding authorized users: parents, friends, family; an industry online
-const FOLK = [[-6.5, 3.0, 10.9], [-4.4, 4.6, 11.05], [6.0, 3.6, 12.2], [6.6, 0.2, 12.6]];
+const FOLK = [[-6.4, -2.6, 10.9], [-4.2, -3.0, 11.05], [4.6, -3.0, 12.2], [6.8, -2.6, 12.6]];   // a row standing behind the card
 function k3(t) {
   if (t < 7.2) return;
   const dc = drop(t, 7.45, 7); put(G.auCard, 0, dc.y, 0, dc.vis ? 1.15 : 0, 0.1 * Math.sin(t * 0.6), dc.sq);
   // two users snap onto the card on "authorized users"
-  [[-1.4, 8.75], [1.4, 8.9]].forEach(([x, tl], i) => { const d = drop(t, tl, 6); put(G.folk[4 - i], x, 0.4 + d.y, -0.6, d.vis ? 0.62 : 0, 0.3 * (i ? -1 : 1), d.sq); if (t > tl && t < tl + 0.4) OV.over.push({ type: 'pop', p: [x, 2.4, -0.6], k: prog(t, tl, tl + 0.4), r: 0.6 }); });
+  // "authorized users": the account issues two more cards; they slide out from under the parent card, fanned in front
+  [[-3.4, 3.4, -0.35, 8.75], [3.4, 3.6, 0.35, 8.9]].forEach(([x, z, ry, tl], i) => { const u = P(t, tl, tl + 0.45, E.outBack); if (u <= 0.001) return;
+    put(G.auMini[i], lerp(0, x, u), -0.45 + Math.sin(Math.PI * clamp(u)) * 0.8, lerp(0, z, u), 0.62 * outK(t, 10.55, 0.3), lerp(0, ry, u), 0);
+    if (t > tl + 0.3 && t < tl + 0.7) OV.over.push({ type: 'pop', p: [x, 0.8, z], k: prog(t, tl + 0.3, tl + 0.7), r: 0.6 }); });
   // the payoff: the yellow box from the profile drops in beside the card and turns green
   const dy = drop(t, 9.35, 7), turn = t > 10.0;
   if (t < 12.4) {
@@ -333,12 +338,12 @@ function k3(t) {
   if (t > 8.7) OV.over.push({ type: 'big', s: '+ AUTHORIZED USERS', x: 540, y: Y(200), size: 104, align: 'center', k: clamp(sp(t, 8.7, SPRING.bouncy)) * outK(t, 10.55, 0.25), hit: -1 });
   // parents, friends, family drop in around it; a comet trail runs from each to the card
   FOLK.forEach(([x, z, tl], i) => {
-    const d = drop(t, tl, 7); put(G.folk[i], x, d.y, z, d.vis ? 1 : 0, Math.atan2(-x, -z) * 0.6, d.sq);
+    const d = drop(t, tl, 7); put(G.folk[i], x, d.y, z, d.vis ? 0.8 * outK(t, 14.05, 0.3) : 0, Math.atan2(-x, -z) * 0.25, d.sq);
     const tr = P(t, tl + 0.15, tl + 0.75, E.inOutSine);
     if (t > tl + 0.1 && t < tl + 1.1) OV.over.push({ type: 'trail', fn: (u) => [lerp(x, 0, u), 1.5 + Math.sin(Math.PI * u) * 3, lerp(z, 0, u)], p: tr, q: P(t, tl + 0.3, tl + 0.95, E.inOutSine), w: 26 });
   });
-  const labels = [['PARENTS', 10.85, 12.1], ['FRIENDS', 12.15, 12.55], ['FAMILY', 12.55, 13.8]];
-  for (const [w, a, b] of labels) if (t > a && t < b + 0.3) OV.over.push({ type: 'big', s: w, x: 540, y: Y(200), size: 130, align: 'center', k: clamp(sp(t, a, SPRING.bouncy)) * outK(t, b, 0.25), hit: -1 });
+  const labels = [['PARENTS', 10.85, 11.95], ['FRIENDS', 12.15, 12.42], ['FAMILY', 12.55, 13.95]];
+  for (const [w, a, b] of labels) if (t > a && t < b + 0.15) OV.over.push({ type: 'big', s: w, x: 540, y: Y(200), size: 130, align: 'center', k: clamp(sp(t, a, SPRING.bouncy)) * outK(t, b, 0.12), hit: -1 });
   // an online store screen drops behind the card
   const ds = drop(t, 14.3, 8); put(G.screen, 0, ds.y, -5.5, ds.vis ? 1 : 0, 0, ds.sq);
   if (t > 14.3) OV.over.push({ type: 'big', s: 'SOLD ONLINE', x: 540, y: Y(200), size: 120, align: 'center', k: clamp(sp(t, 14.3, SPRING.bouncy)), hit: -1 });

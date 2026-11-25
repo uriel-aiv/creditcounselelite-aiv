@@ -115,6 +115,12 @@ function txt(ctx, s, x, y, size, family, color, { align = 'left', p = 1 } = {}) 
   ctx.save(); ctx.font = font(size, family === DISPLAY ? 800 : 400, family); ctx.fillStyle = color; ctx.textAlign = align;
   ctx.fillText([...s].slice(0, n).join(''), x, y); ctx.restore();
 }
+// true visual centre and width of a text run (from glyph bounds), so strike lines sit dead centre on X and Y
+function textBox(ctx, s, x, y, size, family, align = 'left') {
+  ctx.save(); ctx.font = font(size, family === DISPLAY ? 800 : 400, family); ctx.textAlign = align; const m = ctx.measureText(s); ctx.restore();
+  const l = x - m.actualBoundingBoxLeft, r = x + m.actualBoundingBoxRight, top = y - m.actualBoundingBoxAscent, bot = y + m.actualBoundingBoxDescent;
+  return { cx: (l + r) / 2, cy: (top + bot) / 2, w: r - l, h: bot - top };
+}
 function grp(ctx, k, cx, cy, fn, rot = 0) {
   if (k <= 0.002) return;
   ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot); ctx.scale(k, k); ctx.translate(-cx, -cy); fn(); ctx.restore();
@@ -134,37 +140,48 @@ function card(ctx, x, y, w, h, rot, color, sx = 1, sy = 1) {
   for (let g = 0; g < 4; g++) for (let d = 0; d < 4; d++) ctx.fillRect(-w / 2 + w * 0.12 + g * w * 0.19 + d * w * 0.038, h * 0.12, w * 0.024, h * 0.07);
   ctx.restore();
 }
-// side-view figure built from limbs, so it can walk. phase = walk cycle (radians), walk 0..1 = stride
+// side-view figure built from limbs, so it can walk. phase = walk cycle (radians), walk 0..1 = stride.
+// Instruction-manual pictogram: round head with hair, tapered jacket torso with a white collar and tie, capsule limbs
+// with hands and shoes; front limbs carry a thin paper-coloured outline so overlaps stay readable.
 function person(ctx, x, y, s, color, phase = 0, walk = 0, dir = 1) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s * dir, s);
-  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const lift = 4 * walk * Math.abs(Math.cos(phase));
-  const hip = [0, -150 - lift], sh = [6, -252 - lift];
-  const leg = (ph, back) => {
-    const th = walk * 0.5 * Math.sin(ph), bend = walk * 0.8 * Math.max(0, Math.sin(ph - 1.2));
-    const knee = [hip[0] + 78 * Math.sin(th), hip[1] + 78 * Math.cos(th)];
-    const t2 = th - bend, foot = [knee[0] + 74 * Math.sin(t2), knee[1] + 74 * Math.cos(t2)];
-    ctx.globalAlpha = back ? 0.82 : 1;
-    ctx.lineWidth = 30; ctx.beginPath(); ctx.moveTo(...hip); ctx.lineTo(...knee); ctx.stroke();
-    ctx.lineWidth = 24; ctx.beginPath(); ctx.moveTo(...knee); ctx.lineTo(...foot); ctx.stroke();
-    ctx.lineWidth = 16; ctx.beginPath(); ctx.moveTo(foot[0] - 4, foot[1] + 4); ctx.lineTo(foot[0] + 22, foot[1] + 6); ctx.stroke();
-    ctx.globalAlpha = 1;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const lift = 4 * walk * Math.abs(Math.cos(phase)), breathe = 0;
+  const hip = [0, -152 - lift], sh = [4, -254 - lift + breathe];
+  const seg = (a, b, w, col, sep) => { if (sep) { ctx.strokeStyle = C.paper; ctx.lineWidth = w + 9; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); } ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); };
+  const shade = (c, k) => { const n = parseInt(c.slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, bl = n & 255; return `rgb(${Math.round(lerp(r, 255, k))},${Math.round(lerp(g, 255, k))},${Math.round(lerp(bl, 255, k))})`; };
+  const back = shade(color, 0.28);
+  const leg = (ph, isBack) => {
+    const col = isBack ? back : color, th = walk * 0.5 * Math.sin(ph), bend = walk * 0.8 * Math.max(0, Math.sin(ph - 1.2));
+    const knee = [hip[0] + 76 * Math.sin(th), hip[1] + 76 * Math.cos(th)], t2 = th - bend, foot = [knee[0] + 70 * Math.sin(t2), knee[1] + 70 * Math.cos(t2)];
+    seg(hip, knee, 32, col, !isBack); seg(knee, foot, 26, col, !isBack);
+    // shoe: rounded wedge pointing forward
+    ctx.save(); ctx.translate(...foot); ctx.rotate(t2 * 0.3); ctx.fillStyle = isBack ? back : color; if (!isBack) { ctx.strokeStyle = C.paper; ctx.lineWidth = 6; }
+    ctx.beginPath(); ctx.moveTo(-16, -8); ctx.quadraticCurveTo(-18, 12, -10, 14); ctx.lineTo(34, 14); ctx.quadraticCurveTo(38, 2, 22, -4); ctx.closePath(); if (!isBack) ctx.stroke(); ctx.fill(); ctx.restore();
   };
-  const arm = (ph, back) => {
-    const th = -walk * 0.55 * Math.sin(ph) + 0.08, el = 0.25 + walk * 0.45 * Math.max(0, Math.sin(ph));
-    const elbow = [sh[0] + 62 * Math.sin(th), sh[1] + 10 + 62 * Math.cos(th)];
-    const hand = [elbow[0] + 56 * Math.sin(th + el), elbow[1] + 56 * Math.cos(th + el)];
-    ctx.globalAlpha = back ? 0.82 : 1;
-    ctx.lineWidth = 22; ctx.beginPath(); ctx.moveTo(sh[0], sh[1] + 10); ctx.lineTo(...elbow); ctx.stroke();
-    ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(...elbow); ctx.lineTo(...hand); ctx.stroke();
-    ctx.globalAlpha = 1;
+  const arm = (ph, isBack) => {
+    const col = isBack ? back : color, th = -walk * 0.55 * Math.sin(ph) + 0.1, el = 0.3 + walk * 0.45 * Math.max(0, Math.sin(ph));
+    const s0 = [sh[0], sh[1] + 14], elbow = [s0[0] + 60 * Math.sin(th), s0[1] + 60 * Math.cos(th)], hand = [elbow[0] + 54 * Math.sin(th + el), elbow[1] + 54 * Math.cos(th + el)];
+    seg(s0, elbow, 24, col, !isBack); seg(elbow, hand, 20, col, !isBack);
+    ctx.fillStyle = isBack ? back : color; ctx.beginPath(); ctx.arc(hand[0] + 2, hand[1] + 4, 12, 0, TAU); ctx.fill();
   };
   leg(phase + Math.PI, true); arm(phase, true);
-  ctx.beginPath(); ctx.moveTo(sh[0] - 22, sh[1] - 4); ctx.quadraticCurveTo(sh[0] + 8, sh[1] - 14, sh[0] + 26, sh[1]);
-  ctx.lineTo(hip[0] + 20, hip[1] + 6); ctx.lineTo(hip[0] - 20, hip[1] + 6); ctx.closePath(); ctx.fill();
-  ctx.lineWidth = 12; ctx.stroke();
-  ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(sh[0] + 2, sh[1]); ctx.lineTo(sh[0] + 6, sh[1] - 18); ctx.stroke();
-  ctx.beginPath(); ctx.ellipse(sh[0] + 10, sh[1] - 44, 23, 27, 0.15, 0, TAU); ctx.fill();
+  // torso: jacket, wider at the chest, tapered to the waist
+  ctx.fillStyle = color; ctx.beginPath();
+  ctx.moveTo(sh[0] - 26, sh[1] - 2); ctx.quadraticCurveTo(sh[0] + 6, sh[1] - 16, sh[0] + 30, sh[1] + 4);
+  ctx.quadraticCurveTo(sh[0] + 40, sh[1] + 50, hip[0] + 26, hip[1] + 4); ctx.lineTo(hip[0] - 24, hip[1] + 4);
+  ctx.quadraticCurveTo(sh[0] - 34, sh[1] + 50, sh[0] - 26, sh[1] - 2); ctx.closePath(); ctx.fill();
+  // collar and tie on the front edge
+  ctx.fillStyle = C.white; ctx.beginPath(); ctx.moveTo(sh[0] + 8, sh[1] - 10); ctx.lineTo(sh[0] + 30, sh[1] + 2); ctx.lineTo(sh[0] + 26, sh[1] + 40); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = color === C.blue ? C.ink : C.blue; ctx.beginPath(); ctx.moveTo(sh[0] + 24, sh[1] + 2); ctx.lineTo(sh[0] + 30, sh[1] + 8); ctx.lineTo(sh[0] + 31, sh[1] + 54); ctx.lineTo(sh[0] + 25, sh[1] + 62); ctx.lineTo(sh[0] + 20, sh[1] + 52); ctx.closePath(); ctx.fill();
+  // belt line
+  ctx.fillStyle = shade(color, 0.18); ctx.fillRect(hip[0] - 24, hip[1] - 4, 50, 8);
+  // neck, head, hair, ear
+  ctx.fillStyle = color; ctx.fillRect(sh[0] + 1, sh[1] - 16, 18, 16);
+  const hx = sh[0] + 12, hy = sh[1] - 40;
+  ctx.beginPath(); ctx.ellipse(hx, hy, 24, 27, 0.12, 0, TAU); ctx.fill();
+  // nose bump on the facing side
+  ctx.beginPath(); ctx.ellipse(hx + 24, hy + 2, 6, 8, 0.2, 0, TAU); ctx.fill();
   leg(phase, false); arm(phase + Math.PI, false);
   ctx.restore();
 }
@@ -652,6 +669,18 @@ function magnifier(ctx, x, y, r, k, seed) {
   if (k <= 0.01) return;
   stroke(ctx, arcPts(x, y, r, r, 0, TAU, 40), { w: 7, seed }); stroke(ctx, [[x + r * 0.7, y + r * 0.7], [x + r * 1.6, y + r * 1.6]], { w: 14, seed: seed + 1 });
 }
+// thought cloud: an outline of overlapping bumps (union of circles), paper-filled so it sits over anything behind
+function thought(ctx, x, y, s, seed) {
+  if (s <= 0.01) return;
+  const bumps = [[-110, 10, 52], [-62, -34, 60], [6, -52, 70], [78, -30, 58], [118, 14, 46], [60, 40, 52], [-36, 42, 56]];
+  const pts = [];
+  for (let i = 0; i <= 180; i++) { const a = (i / 180) * TAU, dx = Math.cos(a), dy = Math.sin(a) * 0.62; let best = 0;
+    for (const [bx, by, r] of bumps) { const bdx = dx, bdy = dy; // ray from centre: furthest circle hit
+      const B = bx * bdx + by * bdy, Cc = bx * bx + by * by - r * r, D = B * B - Cc * (bdx * bdx + bdy * bdy); if (D >= 0) { const tt = (B + Math.sqrt(D)) / (bdx * bdx + bdy * bdy); if (tt > best) best = tt; } }
+    pts.push([x + dx * best * s, y + dy * best * s]); }
+  ctx.save(); ctx.fillStyle = C.paper; ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p))); ctx.closePath(); ctx.fill(); ctx.restore();
+  stroke(ctx, pts, { w: 6, seed });
+}
 function d1(ctx, t) {
   if (t > 5.6) return;
   const k = sp(t, 0.95, SPRING.bouncy), sway = bob(t, 0.3, 5, 0.4), o1 = out(t, 5.05);
@@ -660,11 +689,14 @@ function d1(ctx, t) {
     // briefcase: he's an investor
     ctx.save(); ctx.fillStyle = C.ink; rrect(ctx, 262, Y(700) + sway, 92, 66, 8); ctx.fill(); ctx.restore();
     stroke(ctx, [[288, Y(700) + sway], [288, Y(684) + sway], [328, Y(684) + sway], [328, Y(700) + sway]], { w: 5, seed: 12 });
-    cloud(ctx, 400, Y(380), 2.6 * clamp(P(t, 1.0, 1.4, E.outBack)) * out(t, 2.9), 21);
-    txt(ctx, '?', 410, Y(395) + bob(t, 1, 6, 0.8), 110, DISPLAY, C.ink, { align: 'center', p: P(t, 1.2, 1.3) * out(t, 2.85) });
+    // thought: two small bubbles rise from the head into the cloud
+    const tb = out(t, 2.9);
+    [[292, Y(372), 10, 0.95], [330, Y(338), 16, 1.02]].forEach(([bx, by, r, t0]) => { const kb = clamp(sp(t, t0, SPRING.bouncy)) * tb; if (kb > 0.01) stroke(ctx, arcPts(bx, by + sway, r * kb, r * kb, 0, TAU, 20), { w: 5, seed: 22 + r }); });
+    thought(ctx, 560, Y(380), 1.45 * clamp(P(t, 1.05, 1.45, E.outBack)) * tb, 21);
+    txt(ctx, '?', 560, Y(418) + bob(t, 1, 6, 0.8), 120, DISPLAY, C.blue, { align: 'center', p: P(t, 1.25, 1.35) * out(t, 2.85) });
   });
   // "out there": a magnifier sweeps right and finds the 0% card
-  const sw = P(t, 2.85, 3.6, E.inOutCubic), mx = lerp(400, 760, sw), my = Y(lerp(380, 470, sw)) + Math.sin(Math.PI * sw) * -60;
+  const sw = P(t, 2.85, 3.6, E.inOutCubic), mx = lerp(560, 760, sw), my = Y(lerp(380, 470, sw)) + Math.sin(Math.PI * sw) * -60;
   if (t > 2.8) grp(ctx, out(t, 5.0), mx, my, () => magnifier(ctx, mx, my, 80, 1, 31));
   if (t > 3.5) {
     const kc = clamp(sp(t, 3.55, SPRING.bouncy)) * out(t, 5.1);
@@ -693,7 +725,9 @@ function d2(ctx, t) {
   txt(ctx, 'NOT TAUGHT', 540, Y(150), 96, DISPLAY, C.blue, { align: 'center', p: P(t, 5.3, 5.75) });
   chalkboard(ctx, 290, Y(500), t, 5.85);
   txt(ctx, 'SCHOOL', 290, Y(760), 60, DISPLAY, C.ink, { align: 'center', p: P(t, 6.3, 6.6) });
-  stroke(ctx, [[150, Y(596)], [380, Y(590)]], { w: 10, color: C.maroon, p: P(t, 6.95, 7.2, E.outCubic), seed: 71 }); cross(ctx, 445, Y(592), 24, P(t, 7.1, 7.3, E.outCubic), 72);
+  { const yy = Y(500) - 95 + 3 * 66, b = textBox(ctx, 'CREDIT', 290 - 160, yy + 16, 46, DISPLAY, 'left'), pad = 14;
+    stroke(ctx, [[b.cx - b.w / 2 - pad, b.cy], [b.cx + b.w / 2 + pad, b.cy]], { w: 10, color: C.maroon, p: P(t, 6.95, 7.2, E.outCubic), seed: 71, amp: 0.8 });
+    cross(ctx, 290 + 120, b.cy, 22, P(t, 7.1, 7.3, E.outCubic), 72); }
   const kh = sp(t, 7.0, SPRING.bouncy);
   grp(ctx, clamp(kh), 800, Y(540), () => {
     house(ctx, 800, Y(600), 1.2, P(t, 7.1, 7.65, E.outCubic), 81);
