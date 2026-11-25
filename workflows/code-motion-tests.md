@@ -206,3 +206,21 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - banners auto-shrink to fit the 180-px window;
     - walking paths must keep the avatar's head inside the window;
     - a cross over a thought is drawn on the grid and centred on the plane.
+
+- **20 Photo Collage 2.5D (new style, 2026-11-25)** — After Effects-style animation of normal photos in 2.5D space (references: cut-out photo explainers with parallax, blur-ins, fog wipes, glow and chromatic aberration). Film: `motion-kit/films/cce-ft20-collage` (Video 3).
+  - **Making the layers (Nano Banana 2.1, 2K, about 6 credits an image):**
+    - generate each shot as a normal photo (9:16, subject full-body, clear space above the head for headlines, no text or logos);
+    - edit that same image with Nano Banana 2.1: "remove the subject, fill what would be behind, keep everything else the same" to get the clean background plate;
+    - generate props (cash, statement, passport) as product shots on plain white;
+    - cut everything out with `python3 motion-kit/tools/collage/make_layers.py` (the plate difference bounds the person; a people-only model gives the clean edge). A general model alone also grabs nearby objects (the jet, the lounger).
+  - **Effects, all in code on top of plain photos:**
+    - camera push with parallax (plate takes 0.6 of the push, subject 1.35);
+    - each shot opens defocused and snaps sharp;
+    - props drop onto the desk: big and blurred when high, shadow tightens on landing, small squash;
+    - whips slide both shots across with sub-frame motion blur and strong chromatic aberration;
+    - fog wipe for a change of place;
+    - glow pulses on money, a gold rim behind the subject on the numbers, a sun flare, glints;
+    - hand-drawn marker strokes (circle around the statement line, red X over the passport);
+    - film grain, vignette, a faint permanent colour fringe.
+  - **Type:** Anton caps, one gold word, each word pops in sharp from a blur; ticking counters for the key numbers; never over a head or the prop being talked about.
+  - **Layout:** split-screen for the talk, full-screen photos from the fog wipe on. In the split panel, frame the subject low enough that headline + disclaimer sit above the head (the office shot's disclaimer sits under the headline, not over the cards).
