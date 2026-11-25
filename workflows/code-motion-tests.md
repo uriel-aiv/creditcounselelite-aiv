@@ -224,3 +224,14 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - film grain, vignette, a faint permanent colour fringe.
   - **Type:** Anton caps, one gold word, each word pops in sharp from a blur; ticking counters for the key numbers; never over a head or the prop being talked about.
   - **Layout:** split-screen for the talk, full-screen photos from the fog wipe on. In the split panel, frame the subject low enough that headline + disclaimer sit above the head (the office shot's disclaimer sits under the headline, not over the cards).
+  - **Round 2 feedback ("not there yet", "no fake walk", "flat image style", textures, light leaks, glowy serif, Posterize Time):**
+    - never puppet people: no fake walks, bobs or poses. Subjects stay still; all motion is the camera moving through depth and elements flying in;
+    - props are flat, front-on cut-outs (prompt "flat front view / flat lay, orthographic like a scan, no perspective, no tilt"), never spun or tilted;
+    - a real 2.5D camera: each layer has a depth Z; the camera dollies, cranes and pans; near layers move and grow more. Elements enter fast with a hard ease-out and settle into a slow drift;
+    - depth of field: blur grows with distance from the focus plane; foreground objects close to the lens are big and soft; shots open out of focus and rack in; focus racks to a prop on its line (the boarding pass);
+    - many layers per shot (6-10): cards, coins, notes, watch, statement, passport, jet, clouds, palms;
+    - textures per layer like the aging reference: black-and-white halftone on some cut-outs and plates (office background, watch, statement, black cards), black-and-white on others, a warm sepia grade on the tarmac, colour kept for the hero subject and the money; paper grain, dust and hairs over the panel;
+    - transitions are light-leak burns (warm orange/red leaks sweep across and burn toward white on the cut);
+    - type: glowing serif (Playfair Display 800/900, cream with a soft bloom, gold words with a gold bloom), letters reveal one by one out of a blur, over a soft dark band at the top so it reads on bright photos;
+    - Posterize Time: the photo panel animates at 12 fps (held frames), founder footage and captions stay at full rate;
+    - masks: matte the edge band and decontaminate edge colours so no halo shows; fill only small holes.
