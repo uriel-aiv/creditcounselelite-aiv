@@ -89,7 +89,10 @@ function avatar(legs = 0, arms = 'down', bob = 0, look = {}) {
   rect(b, 7, 5 + y0, 16, 15, K.skin); [[7, 5], [22, 5], [7, 19], [22, 19]].forEach(([x, y]) => px(b, x, y + y0, null)); px(b, 8, 19 + y0, null);
   rect(b, 7, 6 + y0, 2, 12, K.skinS); rect(b, 9, 12 + y0, 2, 3, K.skinS);   // shade side + ear
   rect(b, 8, 3 + y0, 15, 4, K.hair); rect(b, 7, 5 + y0, 3, 6, K.hair); rect(b, 9, 2 + y0, 12, 2, K.hair); [[11, 3], [12, 3], [13, 3], [17, 3], [18, 2]].forEach(([x, y]) => px(b, x, y + y0, K.hairH));
-  if (K.glasses) { rect(b, 12, 11 + y0, 11, 3, K.glass); px(b, 17, 11 + y0, K.gold); rect(b, 12, 10 + y0, 11, 1, K.gold); px(b, 14, 11 + y0, '#8fa3ff'); px(b, 20, 11 + y0, '#8fa3ff'); }
+  if (K.glasses) {
+    for (const lx of [12, 18]) { rect(b, lx, 11 + y0, 5, 2, '#121522'); rect(b, lx + 1, 13 + y0, 3, 1, '#121522'); px(b, lx + 1, 11 + y0, '#A9BDFF'); px(b, lx + 2, 12 + y0, '#5E73C9'); px(b, lx + 4, 12 + y0, '#2A3150'); }
+    rect(b, 12, 10 + y0, 11, 1, K.gold); px(b, 17, 11 + y0, K.gold); px(b, 11, 11 + y0, K.goldS); px(b, 10, 11 + y0, K.goldS);
+  }
   else { rect(b, 13, 11 + y0, 2, 2, '#1A1420'); rect(b, 19, 11 + y0, 2, 2, '#1A1420'); px(b, 13, 11 + y0, '#FFFFFF'); px(b, 19, 11 + y0, '#FFFFFF'); rect(b, 12, 9 + y0, 3, 1, K.hair); rect(b, 18, 9 + y0, 3, 1, K.hair);
     if (K.specs) { for (const ex of [12, 18]) { rect(b, ex, 10 + y0, 4, 1, '#6B5B4B'); rect(b, ex, 13 + y0, 4, 1, '#6B5B4B'); px(b, ex, 11 + y0, '#6B5B4B'); px(b, ex, 12 + y0, '#6B5B4B'); px(b, ex + 3, 11 + y0, '#6B5B4B'); px(b, ex + 3, 12 + y0, '#6B5B4B'); } px(b, 16, 11 + y0, '#6B5B4B'); px(b, 17, 11 + y0, '#6B5B4B'); } }
   if (K.bun) { rect(b, 6, 6 + y0, 3, 10, K.hair); rect(b, 12, 0 + y0, 6, 3, K.hair); px(b, 13, 0 + y0, K.hairH); }
@@ -159,7 +162,7 @@ function banner(ctx, s, cy, sc, t, a, b, col = '#FFFFFF') {   // in at a (pops d
 // ================================================================== sprites (built once)
 const SPR = {};
 function buildSprites() {
-  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk), true, true);
+  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk));
   SPR.case = toCanvas(briefcase()); SPR.cash = toCanvas(cashBrick()); SPR.bar = toCanvas(goldBar()); SPR.card = toCanvas(blackCard()); SPR.plane = toCanvas(plane());
   SPR.bubble = toCanvas(bubble(26, 16)); SPR.g0 = toCanvas(gull(0), false); SPR.g1 = toCanvas(gull(1), false); SPR.n0 = toCanvas(note(0)); SPR.n1 = toCanvas(note(1)); for (let i = 0; i < 3; i++) SPR['sp' + i] = toCanvas(sparkle(i / 3 + 0.1), false);
   for (let n = 1; n <= 9; n++) SPR['st' + n] = toCanvas(statement(n));
@@ -268,7 +271,6 @@ function drawPixels(ctx, t) {
     }
     const cnt = Math.min(15600, Math.round(15600 * P(t, 2.75, 4.0, (x) => x) / 100) * 100);
     if (t > 2.7) banner(HX, cnt.toLocaleString('en-US'), 26, 3, t, 2.7, 5.0, cnt >= 15600 ? '#F2C14E' : '#FFFFFF');
-    banner(HX, 'FREE CASH', 52, 2, t, 4.3, 5.1, '#9BD38A');
     noteRain(ctx, t, 4.3, 5.9, 130);
     const w = walker(t, [[3.6, 124, 110], [4.55, 104, 163], [5.35, 104, 163], [6.0, 92, 176], [9.6, 92, 176]]);
     const cheer = t > 4.55 && t < 5.35;
@@ -279,9 +281,7 @@ function drawPixels(ctx, t) {
       spr(ctx, 'st' + lines, 66 + wob, 114, false, 1 - P(t, 9.5, 9.7));
       if (t > 8.6) { const k = P(t, 8.6, 8.95, E.outBack); spr(ctx, 'card', lerp(100, 70, k), lerp(98, 100, k) - Math.sin(Math.PI * clamp((t - 8.6) / 0.35)) * 12); if (t > 8.95 && t < 9.35) spr(ctx, 'sp' + Math.floor((t * 9) % 3), 76, 88); }
     }
-    { const kk = [8.55, 9.55]; banner(HX, 'STATEMENT', 26, 2, t, kk[0], kk[1]); banner(HX, 'CREDIT', 50, 2, t, kk[0] + 0.1, kk[1], '#F2C14E'); }
     if (t > 9.6) spr(ctx, 'case', w.x + 8, w.y - 3 - (t > 9.75 && t < 10.3 ? Math.floor(t * 12) % 2 : 0));
-    banner(HX, 'JUST THE CASH', 30, 2, t, 9.7, 10.2);
     if (t > 10.3 && t < 11.45) {
       const k = clamp(spring(t - 10.3, { stiffness: 400, damping: 16 })), bx = w.x + 22, by = w.y - 40 + (1 - k) * 6;
       spr(ctx, 'bubble', bx, by, false, clamp(k)); spr(ctx, 'plane', bx + Math.sin(t * 6) * 2, by - 9, false, clamp(k));
@@ -295,7 +295,6 @@ function drawPixels(ctx, t) {
     const wave = t > 13.5;
     drawAvatar(ctx, w, wave ? (Math.floor(t * 7) % 2 ? 'wave0' : 'wave1') : 'carry', wave ? false : null);
     spr(ctx, 'case', w.x + (w.flip ? -8 : 8), w.y - 3 - (wave ? 0 : Math.floor(t * 8) % 2), w.flip);
-    banner(HX, 'FOR TRAVEL', 30, 3, t, 11.95, 13.3);
   }
   // ---------------------------------------------------------------- villa
   if (sc === 'villa') {
@@ -306,7 +305,6 @@ function drawPixels(ctx, t) {
     if (cheer) confetti(ctx, t, 15.8, w.x, w.y - 32);
     const mult = t < 15.15 ? 7 : Math.min(21, 7 + Math.floor((t - 15.15) / 0.045));
     banner(HX, `${mult}X`, 26, 4, t, 14.55, END - 0.15, mult >= 21 ? '#F2C14E' : '#FFFFFF');
-    banner(HX, 'EXTRA RETURN', 54, 2, t, 15.9, END - 0.15);
   }
 }
 

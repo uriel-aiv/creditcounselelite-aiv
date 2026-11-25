@@ -14,19 +14,15 @@ function drawPixels(ctx, t) {
   const sc = scene(t); ctx.drawImage(BG[sc], 0, 0); ambient(ctx, sc, t);
   if (sc === 'diner') {
     // the busboy scrubs a table; two diners walk past without a look; he thinks of the playbook he never got
-    const w = walker(t, [[0, 144, 160], [8.75, 144, 160], [9.5, 104, 196]]);
+    const w = walker(t, [[0, 98, 150], [8.75, 98, 150], [9.5, 120, 196]]);
     const scrub = (t > 0.3 && t < 2.6) || (t > 4.8 && t < 6.3);
-    cast(ctx, [{ w, who: 'busboy', arms: scrub ? (Math.floor(t * 6) % 2 ? 'scrub0' : 'scrub1') : null, flip: scrub ? false : null },
-      t < 6.4 ? popIn(ctx, t, 4.85, 110, 126, 'av', t > 5.6) : null, t < 6.5 ? popIn(ctx, t, 5.05, 128, 134, 'friend2', t > 5.7) : null]);
-    for (const [tx, x, y] of [[6.4, 110, 126], [6.5, 128, 134]]) if (t > tx && t < tx + 0.3) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tx) / 0.1)), x, y - 18);
-    if (scrub) for (let k = 0; k < 3; k++) { const ph = (t * 2.4 + k / 3) % 1; ctx.fillStyle = '#FFFFFF'; ctx.globalAlpha = 1 - ph; ctx.fillRect(r(w.x + 14 + k * 3), r(w.y - 18 - ph * 10), 2, 2); ctx.globalAlpha = 1; }   // soap bubbles
+    cast(ctx, [{ w: { x: 116, y: 144 }, draw: () => spr(ctx, 'ctable', 116, 145) }, { w, who: 'busboy', arms: scrub ? (Math.floor(t * 6) % 2 ? 'scrub0' : 'scrub1') : null, flip: scrub ? false : null },
+      t < 6.4 ? popIn(ctx, t, 4.85, 126, 116, 'av', t > 5.6) : null, t < 6.5 ? popIn(ctx, t, 5.05, 146, 124, 'friend2', t > 5.7) : null]);
+    for (const [tx, x, y] of [[6.4, 126, 116], [6.5, 146, 124]]) if (t > tx && t < tx + 0.3) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tx) / 0.1)), x, y - 18);
+    if (scrub) for (let k = 0; k < 3; k++) { const ph = (t * 2.4 + k / 3) % 1; ctx.fillStyle = '#FFFFFF'; ctx.globalAlpha = 1 - ph; ctx.fillRect(r(w.x + 15 + k * 3), r(w.y - 22 - ph * 10), 1, 1); ctx.globalAlpha = 1; }   // soap bubbles
     iconBubble(ctx, w.x - 18, w.y - 44, clamp(spring(t - 2.7, { stiffness: 400, damping: 16 })) * (t < 4.5 ? 1 : 0), (x, y) => spr(ctx, 'wallet', x, y + 5));
     if (t > 3.2 && t < 4.5) { pixText(ctx, '0', w.x - 12, w.y - 63, 1, '#D6342B'); }
     iconBubble(ctx, w.x - 18, w.y - 44, clamp(spring(t - 6.55, { stiffness: 400, damping: 16 })) * (t > 6.55 && t < 8.8 ? 1 : 0), (x, y) => spr(ctx, 'book', x, y + 5), P(t, 7.4, 7.6));
-    banner(HX, 'BUSBOY', 30, 3, t, 0.3, 2.5);
-    banner(HX, 'NOTHING TO SHOW', 30, 2, t, 2.7, 4.6);
-    banner(HX, 'NO CONNECTIONS', 30, 2, t, 4.85, 6.4);
-    banner(HX, 'NO PLAYBOOK', 30, 3, t, 6.55, 8.9);
   }
   if (sc === 'city') {
     // "today": the same man, now in the suit, in the plaza of a block of buildings; gold pins drop on the roofs
@@ -34,9 +30,7 @@ function drawPixels(ctx, t) {
     const cheer = t > 10.45 && t < 11.3;
     cast(ctx, [{ w, who: 'av', arms: cheer ? 'up' : t > 12.7 && t < 14.6 ? (Math.floor(t * 7) % 2 ? 'wave0' : 'wave1') : null, flip: cheer || t > 12.7 ? false : null }]);
     PINS.forEach(([x, y], i) => { const t0 = 10.55 + i * 0.16; if (t < t0) return; const k = clamp((t - t0) / 0.22), b = t > t0 + 0.22 ? Math.max(0, Math.sin((t - t0 - 0.22) * 20)) * 3 * Math.exp(-(t - t0 - 0.22) * 6) : 0; spr(ctx, 'pin', x, y - (1 - k) * (1 - k) * 40 - b - Math.sin(t * 3 + i) * 1); if (t > t0 + 0.22 && t < t0 + 0.58) spr(ctx, 'sp' + Math.min(2, Math.floor((t - t0 - 0.22) / 0.12)), x, y - 12); });
-    banner(HX, 'TODAY', 30, 3, t, 9.6, 10.35);
-    banner(HX, '14 MILLION', 26, 3, t, 10.4, 12.6, '#F2C14E'); banner(HX, 'REAL ESTATE', 54, 2, t, 11.65, 12.6);
-    banner(HX, '0 OUT OF POCKET', 30, 2, t, 12.7, 14.8);
+    banner(HX, '14 MILLION', 26, 3, t, 10.4, 12.6, '#F2C14E');
   }
   if (sc === 'vault') {
     // "cash flow 50,000 a month": a brick drops for each month tick of the clock
@@ -44,7 +38,7 @@ function drawPixels(ctx, t) {
     for (let i = 0; i < 12; i++) { const tl = 15.45 + i * 0.13; if (t < tl - 0.2) continue; const row = i < 5 ? 0 : i < 9 ? 1 : i < 11 ? 2 : 3, col = i < 5 ? i : i < 9 ? i - 5 : i < 11 ? i - 9 : 0; let x = 118 + col * 8 + row * 4, y = 178 - row * 4; const fk = clamp((tl - t) / 0.2); y -= fk * fk * 60; spr(ctx, 'cash', x, y + 4); }
     cast(ctx, [{ w, who: 'av', arms: t > 16.0 ? 'up' : null, flip: false }]);
     if (t > 16.05) confetti(ctx, t, 16.1, w.x, w.y - 30);
-    banner(HX, 'CASH FLOW', 26, 3, t, 15.45, 17.3); banner(HX, '50,000 A MONTH', 54, 2, t, 16.0, 17.3, '#9BD38A');
+    banner(HX, '50,000 A MONTH', 26, 2, t, 16.0, 17.3, '#9BD38A');
   }
   if (sc === 'penthouse') {
     // "since 2017, over 4,000 members": the room fills up, member by member
@@ -52,7 +46,6 @@ function drawPixels(ctx, t) {
     for (const [x, y, who, t0] of CROWD) { const c = popIn(ctx, t, t0, x, y, who, x > 110); if (c) list.push(c); }
     cast(ctx, list);
     const n = Math.round(4000 * P(t, 19.2, 20.35, (x) => x) / 50) * 50;
-    banner(HX, 'SINCE 2017', 30, 3, t, 17.5, 18.5);
     if (t > 19.2) banner(HX, `${n.toLocaleString('en-US')}+ MEMBERS`, 30, 2, t, 19.2, 20.5, n >= 4000 ? '#F2C14E' : '#FFFFFF');
   }
   if (sc === 'office') {
@@ -61,9 +54,8 @@ function drawPixels(ctx, t) {
     cast(ctx, [{ w, who: 'av', arms: t > 23.5 && t < 25.2 ? 'up' : t > 21.8 ? 'carry' : null, flip: t > 21.6 ? false : null }]);
     for (let j = 0; j < 5; j++) { const tj = 21.85 + j * 0.2; if (t < tj) continue; const e = E.outBack(clamp((t - tj) / 0.35)), tx = 70 + j * 18, ty = 118 - Math.abs(j - 2) * 4; spr(ctx, 'card', lerp(MON[0], tx, e), lerp(MON[1], ty, e) - Math.sin(Math.PI * clamp((t - tj) / 0.35)) * 10, false, 1 - P(t, 26.6, 26.9)); }
     for (let d = 0; d < 6; d++) { const tb = 25.4 + d * 0.06; let x = 168 + (d % 2) * 3, y = 126 - d * 3; if (t > tb) { const k = t - tb; x += k * 140; y -= k * 60 - k * k * 40; } if (x < G + 20) spr(ctx, 'st3', x, y, false, t > tb ? clamp(1 - (t - tb) * 1.2) : 1); }
-    banner(HX, 'UP TO 500,000', 30, 2, t, 21.8, 23.35, '#F2C14E');
-    banner(HX, 'AS LOW AS 0%', 30, 3, t, 23.5, 25.2);
-    banner(HX, 'NO DOCUMENTATION', 30, 2, t, 25.3, 26.85);
+    banner(HX, 'UP TO 500,000', 26, 2, t, 21.8, 23.35, '#F2C14E');
+    banner(HX, 'AS LOW AS 0%', 26, 2, t, 23.5, 25.2);
   }
   if (sc === 'airfield') {
     flock(ctx, t, 18, 1, 3);
@@ -71,13 +63,11 @@ function drawPixels(ctx, t) {
     const wave = t > 29.5;
     cast(ctx, [{ w, who: 'av', arms: wave ? (Math.floor(t * 7) % 2 ? 'wave0' : 'wave1') : 'carry', flip: wave ? false : null }]);
     if (!wave) spr(ctx, 'case', w.x + (w.flip ? -8 : 8), w.y - 3 - Math.floor(t * 8) % 2, w.flip);
-    banner(HX, 'LINK BELOW', 30, 3, t, 27.4, 29.3);
     if (t > 27.5 && t < 29.3) { const b = Math.abs(Math.sin((t - 27.5) * 6)) * 6; HX.drawImage(SPR.arrow, r(VW / 2 - 6), r(150 + b)); }
-    banner(HX, "WHAT'S POSSIBLE", 30, 2, t, 29.5, END - 0.15, '#F2C14E');
   }
 }
 const CAMK = [
-  [0.0, 150, 140, 9], [4.8, 150, 135, 6.2], [6.3, 135, 125, 5.4], [8.8, 150, 125, 6.0], [9.45, 160, 145, 8],
+  [0.0, 112, 135, 9], [4.8, 116, 125, 6.2], [6.3, 120, 120, 5.4], [8.8, 112, 125, 6.0], [9.45, 118, 150, 8],
   [9.45, 110, 150, 9], [10.3, 104, 130, 5.4], [12.6, 104, 140, 6.0], [14.9, 104, 160, 7.4],
   [14.9, 120, 140, 7.0], [15.8, 122, 135, 5.6], [17.45, 110, 150, 7.4],
   [17.45, 110, 150, 7.0], [18.45, 110, 160, 6.0], [20.6, 110, 160, 7.5],

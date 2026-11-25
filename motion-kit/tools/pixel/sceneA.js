@@ -23,10 +23,8 @@ function drawPixels(ctx, t) {
       cast(ctx, [{ w, who: 'friend1', arms: point ? 'point' : null, flip: point ? false : null }]);
       if (t > 8.35) { const k1 = clamp(spring(t - 8.35, { stiffness: 380, damping: 15 })); spr(ctx, 'card', w.x, w.y - 50 + (1 - k1) * 6, false, clamp(k1 * 2));
         for (let j = 0; j < 2; j++) { const tj = 8.75 + j * 0.3; if (t < tj) continue; const kk = P(t, tj, tj + 0.32, E.outBack); spr(ctx, 'card', w.x + lerp(0, j ? 19 : -19, kk), w.y - 50 + lerp(0, 10, kk), false, clamp(kk * 2)); if (t < tj + 0.36) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tj) / 0.12)), w.x + (j ? 26 : -26), w.y - 44); } }
-      banner(HX, 'ALL GOOD', 22, 2, t, 1.3, 2.4);
-      banner(HX, 'BUT YELLOW', 22, 2, t, 2.5, 4.0, '#F2C14E');
       banner(HX, 'MID-LOW 700S', 22, 2, t, 4.1, 5.9);
-      banner(HX, 'AUTHORIZED', 26, 3, t, 8.4, 9.95); banner(HX, 'USERS', 52, 3, t, 8.55, 9.95, '#F2C14E');
+      banner(HX, 'AUTHORIZED USERS', 22, 2, t, 8.4, 9.95, '#F2C14E');
     } else {
       const w = walker(t, [[12.95, 222, 204], [13.9, 150, 186], [END + 1, 150, 186]]);
       const got = t > 15.45, cheer = t > 16.35;
@@ -34,8 +32,6 @@ function drawPixels(ctx, t) {
       for (let j = 0; j < 3; j++) { const tj = 14.4 + j * 0.3; if (t > tj && t < tj + 0.5) { const k = clamp((t - tj) / 0.5), e = E.inOutSine(k); spr(ctx, 'card', lerp(MON[0], w.x + 10, e), lerp(MON[1], w.y - 26, e) - Math.sin(Math.PI * e) * 22); } }
       if (t > 14.3 && t < 15.6) { const g = (Math.floor(t * 8) % 2) ? '#7FE6FF' : '#BFF3FF'; ctx.fillStyle = g; ctx.fillRect(MON[0] - 6, MON[1] - 4, 2, 2); }
       if (cheer) confetti(ctx, t, 16.4, w.x, w.y - 30);
-      banner(HX, 'INDUSTRY ONLINE', 30, 2, t, 13.95, 15.3);
-      banner(HX, 'SOLD ONLINE', 30, 3, t, 15.4, END - 0.15);
     }
   }
   if (sc === 'living') {
@@ -47,8 +43,6 @@ function drawPixels(ctx, t) {
       { w: you, who: 'friend1', arms: t > 11.6 ? 'carry' : null, flip: t > 10.85 ? true : null }, t > 12.05 ? { w: f2, who: 'friend2', flip: t > 12.75 ? true : null } : null, t > 12.45 ? { w: bs, who: 'av' } : null]);
     cardArc(ctx, t, 11.15, 0.45, [50, 150], [144, 156], 24); cardArc(ctx, t, 12.75, 0.3, [172, 172], [152, 156], 10);
     for (const tt of [11.6, 13.05]) if (t > tt && t < tt + 0.36) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tt) / 0.12)), 150, 142);
-    banner(HX, 'PARENTS', 30, 3, t, 10.9, 12.1);
-    banner(HX, 'FRIENDS', 26, 3, t, 12.2, 12.95); banner(HX, 'FAMILY', 52, 3, t, 12.6, 12.95, '#F2C14E');
   }
 }
 const CAMK = [

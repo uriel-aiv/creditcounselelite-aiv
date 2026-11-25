@@ -20,7 +20,7 @@ function fillBox(ctx, i, k, col, hi) {   // fill box i from the bottom up to fra
 }
 function boxCenter(i) { const B = BOXPX[i]; let sx = 0, sy = 0; for (const [q, y] of B) { sx += q; sy += y; } return [sx / B.length, sy / B.length]; }
 // draw a cast list sorted by depth (y), so characters pass in front of / behind each other correctly
-function cast(ctx, list) { list.filter(Boolean).sort((a, b) => a.w.y - b.w.y).forEach((c) => { drawAvatar(ctx, c.w, c.arms || null, c.flip ?? null, c.who); if (c.after) c.after(c.w); }); }
+function cast(ctx, list) { list.filter(Boolean).sort((a, b) => a.w.y - b.w.y).forEach((c) => { if (c.draw) { c.draw(); return; } drawAvatar(ctx, c.w, c.arms || null, c.flip ?? null, c.who); if (c.after) c.after(c.w); }); }
 // characters that pop up out of the floor (Habbo "enter room" puff), then idle with a small bob or wave
 function popIn(ctx, t, t0, x, y, who, flip = false) {
   if (t < t0) return null; const k = clamp(spring(t - t0, { stiffness: 420, damping: 15 })), d = t - t0;
@@ -35,4 +35,12 @@ function book() { const b = buf(12, 9); rect(b, 0, 0, 12, 9, '#1F2C72'); rect(b,
 function pin() { const b = buf(7, 10); rect(b, 1, 0, 5, 6, '#F2C14E'); rect(b, 0, 1, 7, 4, '#F2C14E'); rect(b, 2, 2, 3, 2, '#FFF4C4'); rect(b, 2, 6, 3, 2, '#C99A2E'); px(b, 3, 8, '#C99A2E'); px(b, 3, 9, '#C99A2E'); return b; }
 function arrowDown() { const b = buf(11, 12); rect(b, 3, 0, 5, 6, '#F2C14E'); poly(b, [[0, 6], [11, 6], [5.5, 12]], '#F2C14E'); return b; }
 function wallet() { const b = buf(14, 9); rect(b, 0, 0, 14, 9, '#5A3A22'); rect(b, 0, 0, 14, 2, '#7A5232'); rect(b, 9, 3, 5, 3, '#3E2716'); px(b, 11, 4, '#F2C14E'); return b; }
-function buildExtras() { SPR.book = toCanvas(book()); SPR.pin = toCanvas(pin()); SPR.arrow = toCanvas(arrowDown()); SPR.wallet = toCanvas(wallet()); }
+function cafeTable() {   // a small round-top diner table (two plates, a cup), seen from the iso angle
+  const b = buf(24, 20);
+  poly(b, [[12, 0], [24, 6], [12, 12], [0, 6]], '#F4E8CF'); poly(b, [[0, 6], [12, 12], [12, 14], [0, 8]], '#C9372C'); poly(b, [[12, 12], [24, 6], [24, 8], [12, 14]], '#A42A22');
+  rect(b, 11, 14, 2, 5, '#8A8A92'); rect(b, 8, 18, 8, 2, '#5E5E66');
+  for (const [x, y] of [[8, 5], [15, 7]]) { rect(b, x - 2, y - 1, 5, 3, '#FFFFFF'); px(b, x, y, '#B8863E'); px(b, x + 1, y, '#8C5A2B'); }
+  rect(b, 12, 2, 2, 2, '#E9E2CF'); px(b, 12, 2, '#6B3A1E');
+  return b;
+}
+function buildExtras() { SPR.ctable = toCanvas(cafeTable()); SPR.book = toCanvas(book()); SPR.pin = toCanvas(pin()); SPR.arrow = toCanvas(arrowDown()); SPR.wallet = toCanvas(wallet()); }

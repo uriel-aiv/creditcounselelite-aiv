@@ -85,7 +85,10 @@ function avatar(legs = 0, arms = 'down', bob = 0, look = {}) {
   rect(b, 7, 5 + y0, 16, 15, K.skin); [[7, 5], [22, 5], [7, 19], [22, 19]].forEach(([x, y]) => px(b, x, y + y0, null)); px(b, 8, 19 + y0, null);
   rect(b, 7, 6 + y0, 2, 12, K.skinS); rect(b, 9, 12 + y0, 2, 3, K.skinS);   // shade side + ear
   rect(b, 8, 3 + y0, 15, 4, K.hair); rect(b, 7, 5 + y0, 3, 6, K.hair); rect(b, 9, 2 + y0, 12, 2, K.hair); [[11, 3], [12, 3], [13, 3], [17, 3], [18, 2]].forEach(([x, y]) => px(b, x, y + y0, K.hairH));
-  if (K.glasses) { rect(b, 12, 11 + y0, 11, 3, K.glass); px(b, 17, 11 + y0, K.gold); rect(b, 12, 10 + y0, 11, 1, K.gold); px(b, 14, 11 + y0, '#8fa3ff'); px(b, 20, 11 + y0, '#8fa3ff'); }
+  if (K.glasses) {
+    for (const lx of [12, 18]) { rect(b, lx, 11 + y0, 5, 2, '#121522'); rect(b, lx + 1, 13 + y0, 3, 1, '#121522'); px(b, lx + 1, 11 + y0, '#A9BDFF'); px(b, lx + 2, 12 + y0, '#5E73C9'); px(b, lx + 4, 12 + y0, '#2A3150'); }
+    rect(b, 12, 10 + y0, 11, 1, K.gold); px(b, 17, 11 + y0, K.gold); px(b, 11, 11 + y0, K.goldS); px(b, 10, 11 + y0, K.goldS);
+  }
   else { rect(b, 13, 11 + y0, 2, 2, '#1A1420'); rect(b, 19, 11 + y0, 2, 2, '#1A1420'); px(b, 13, 11 + y0, '#FFFFFF'); px(b, 19, 11 + y0, '#FFFFFF'); rect(b, 12, 9 + y0, 3, 1, K.hair); rect(b, 18, 9 + y0, 3, 1, K.hair);
     if (K.specs) { for (const ex of [12, 18]) { rect(b, ex, 10 + y0, 4, 1, '#6B5B4B'); rect(b, ex, 13 + y0, 4, 1, '#6B5B4B'); px(b, ex, 11 + y0, '#6B5B4B'); px(b, ex, 12 + y0, '#6B5B4B'); px(b, ex + 3, 11 + y0, '#6B5B4B'); px(b, ex + 3, 12 + y0, '#6B5B4B'); } px(b, 16, 11 + y0, '#6B5B4B'); px(b, 17, 11 + y0, '#6B5B4B'); } }
   if (K.bun) { rect(b, 6, 6 + y0, 3, 10, K.hair); rect(b, 12, 0 + y0, 6, 3, K.hair); px(b, 13, 0 + y0, K.hairH); }
@@ -155,7 +158,7 @@ function banner(ctx, s, cy, sc, t, a, b, col = '#FFFFFF') {   // in at a (pops d
 // ================================================================== sprites (built once)
 const SPR = {};
 function buildSprites() {
-  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk), true, true);
+  for (const [ln, lk] of Object.entries(LOOKS)) for (let l = 0; l < 4; l++) for (const a of ['down', 'swing0', 'swing1', 'wave0', 'wave1', 'up', 'carry', 'scrub0', 'scrub1', 'point']) SPR[`${ln === 'boss' ? 'av' : ln}_${l}_${a}`] = toCanvas(avatar(l, a, l === 1 || l === 3 ? -1 : 0, lk));
   SPR.case = toCanvas(briefcase()); SPR.cash = toCanvas(cashBrick()); SPR.bar = toCanvas(goldBar()); SPR.card = toCanvas(blackCard()); SPR.plane = toCanvas(plane());
   buildExtras(); SPR.bubble = toCanvas(bubble(26, 16)); SPR.g0 = toCanvas(gull(0), false); SPR.g1 = toCanvas(gull(1), false); SPR.n0 = toCanvas(note(0)); SPR.n1 = toCanvas(note(1)); for (let i = 0; i < 3; i++) SPR['sp' + i] = toCanvas(sparkle(i / 3 + 0.1), false);
   for (let n = 1; n <= 9; n++) SPR['st' + n] = toCanvas(statement(n));
@@ -253,7 +256,7 @@ function fillBox(ctx, i, k, col, hi) {   // fill box i from the bottom up to fra
 }
 function boxCenter(i) { const B = BOXPX[i]; let sx = 0, sy = 0; for (const [q, y] of B) { sx += q; sy += y; } return [sx / B.length, sy / B.length]; }
 // draw a cast list sorted by depth (y), so characters pass in front of / behind each other correctly
-function cast(ctx, list) { list.filter(Boolean).sort((a, b) => a.w.y - b.w.y).forEach((c) => { drawAvatar(ctx, c.w, c.arms || null, c.flip ?? null, c.who); if (c.after) c.after(c.w); }); }
+function cast(ctx, list) { list.filter(Boolean).sort((a, b) => a.w.y - b.w.y).forEach((c) => { if (c.draw) { c.draw(); return; } drawAvatar(ctx, c.w, c.arms || null, c.flip ?? null, c.who); if (c.after) c.after(c.w); }); }
 // characters that pop up out of the floor (Habbo "enter room" puff), then idle with a small bob or wave
 function popIn(ctx, t, t0, x, y, who, flip = false) {
   if (t < t0) return null; const k = clamp(spring(t - t0, { stiffness: 420, damping: 15 })), d = t - t0;
@@ -268,7 +271,15 @@ function book() { const b = buf(12, 9); rect(b, 0, 0, 12, 9, '#1F2C72'); rect(b,
 function pin() { const b = buf(7, 10); rect(b, 1, 0, 5, 6, '#F2C14E'); rect(b, 0, 1, 7, 4, '#F2C14E'); rect(b, 2, 2, 3, 2, '#FFF4C4'); rect(b, 2, 6, 3, 2, '#C99A2E'); px(b, 3, 8, '#C99A2E'); px(b, 3, 9, '#C99A2E'); return b; }
 function arrowDown() { const b = buf(11, 12); rect(b, 3, 0, 5, 6, '#F2C14E'); poly(b, [[0, 6], [11, 6], [5.5, 12]], '#F2C14E'); return b; }
 function wallet() { const b = buf(14, 9); rect(b, 0, 0, 14, 9, '#5A3A22'); rect(b, 0, 0, 14, 2, '#7A5232'); rect(b, 9, 3, 5, 3, '#3E2716'); px(b, 11, 4, '#F2C14E'); return b; }
-function buildExtras() { SPR.book = toCanvas(book()); SPR.pin = toCanvas(pin()); SPR.arrow = toCanvas(arrowDown()); SPR.wallet = toCanvas(wallet()); }
+function cafeTable() {   // a small round-top diner table (two plates, a cup), seen from the iso angle
+  const b = buf(24, 20);
+  poly(b, [[12, 0], [24, 6], [12, 12], [0, 6]], '#F4E8CF'); poly(b, [[0, 6], [12, 12], [12, 14], [0, 8]], '#C9372C'); poly(b, [[12, 12], [24, 6], [24, 8], [12, 14]], '#A42A22');
+  rect(b, 11, 14, 2, 5, '#8A8A92'); rect(b, 8, 18, 8, 2, '#5E5E66');
+  for (const [x, y] of [[8, 5], [15, 7]]) { rect(b, x - 2, y - 1, 5, 3, '#FFFFFF'); px(b, x, y, '#B8863E'); px(b, x + 1, y, '#8C5A2B'); }
+  rect(b, 12, 2, 2, 2, '#E9E2CF'); px(b, 12, 2, '#6B3A1E');
+  return b;
+}
+function buildExtras() { SPR.ctable = toCanvas(cafeTable()); SPR.book = toCanvas(book()); SPR.pin = toCanvas(pin()); SPR.arrow = toCanvas(arrowDown()); SPR.wallet = toCanvas(wallet()); }
 
 // ================================================================== Video 24 "Authorized users" (16.7 s) //SRC_FRAMES=465
 const ROOMS = ['office', 'living'];
@@ -295,10 +306,8 @@ function drawPixels(ctx, t) {
       cast(ctx, [{ w, who: 'friend1', arms: point ? 'point' : null, flip: point ? false : null }]);
       if (t > 8.35) { const k1 = clamp(spring(t - 8.35, { stiffness: 380, damping: 15 })); spr(ctx, 'card', w.x, w.y - 50 + (1 - k1) * 6, false, clamp(k1 * 2));
         for (let j = 0; j < 2; j++) { const tj = 8.75 + j * 0.3; if (t < tj) continue; const kk = P(t, tj, tj + 0.32, E.outBack); spr(ctx, 'card', w.x + lerp(0, j ? 19 : -19, kk), w.y - 50 + lerp(0, 10, kk), false, clamp(kk * 2)); if (t < tj + 0.36) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tj) / 0.12)), w.x + (j ? 26 : -26), w.y - 44); } }
-      banner(HX, 'ALL GOOD', 22, 2, t, 1.3, 2.4);
-      banner(HX, 'BUT YELLOW', 22, 2, t, 2.5, 4.0, '#F2C14E');
       banner(HX, 'MID-LOW 700S', 22, 2, t, 4.1, 5.9);
-      banner(HX, 'AUTHORIZED', 26, 3, t, 8.4, 9.95); banner(HX, 'USERS', 52, 3, t, 8.55, 9.95, '#F2C14E');
+      banner(HX, 'AUTHORIZED USERS', 22, 2, t, 8.4, 9.95, '#F2C14E');
     } else {
       const w = walker(t, [[12.95, 222, 204], [13.9, 150, 186], [END + 1, 150, 186]]);
       const got = t > 15.45, cheer = t > 16.35;
@@ -306,8 +315,6 @@ function drawPixels(ctx, t) {
       for (let j = 0; j < 3; j++) { const tj = 14.4 + j * 0.3; if (t > tj && t < tj + 0.5) { const k = clamp((t - tj) / 0.5), e = E.inOutSine(k); spr(ctx, 'card', lerp(MON[0], w.x + 10, e), lerp(MON[1], w.y - 26, e) - Math.sin(Math.PI * e) * 22); } }
       if (t > 14.3 && t < 15.6) { const g = (Math.floor(t * 8) % 2) ? '#7FE6FF' : '#BFF3FF'; ctx.fillStyle = g; ctx.fillRect(MON[0] - 6, MON[1] - 4, 2, 2); }
       if (cheer) confetti(ctx, t, 16.4, w.x, w.y - 30);
-      banner(HX, 'INDUSTRY ONLINE', 30, 2, t, 13.95, 15.3);
-      banner(HX, 'SOLD ONLINE', 30, 3, t, 15.4, END - 0.15);
     }
   }
   if (sc === 'living') {
@@ -319,8 +326,6 @@ function drawPixels(ctx, t) {
       { w: you, who: 'friend1', arms: t > 11.6 ? 'carry' : null, flip: t > 10.85 ? true : null }, t > 12.05 ? { w: f2, who: 'friend2', flip: t > 12.75 ? true : null } : null, t > 12.45 ? { w: bs, who: 'av' } : null]);
     cardArc(ctx, t, 11.15, 0.45, [50, 150], [144, 156], 24); cardArc(ctx, t, 12.75, 0.3, [172, 172], [152, 156], 10);
     for (const tt of [11.6, 13.05]) if (t > tt && t < tt + 0.36) spr(ctx, 'sp' + Math.min(2, Math.floor((t - tt) / 0.12)), 150, 142);
-    banner(HX, 'PARENTS', 30, 3, t, 10.9, 12.1);
-    banner(HX, 'FRIENDS', 26, 3, t, 12.2, 12.95); banner(HX, 'FAMILY', 52, 3, t, 12.6, 12.95, '#F2C14E');
   }
 }
 const CAMK = [

@@ -191,7 +191,14 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - props sit on the surfaces they belong to (the case on the coffee table, the statement on the desk).
     - **Checking positions:** run `python3 motion-kit/tools/pixel/waypoints.py <room> '[[x,y],...]' out.png`, which draws each character's footprint box over a gridded room.
     - **Rule of thumb:** a character's 22x44 box may sit in front of furniture (feet lower than the object's base), but its feet never land inside a piece of furniture.
-    - **Separation from busy backgrounds:** characters have a soft one-pixel light rim outside their dark outline. Crowds are laid out in rows on the open floor only.
+    - **Separation from busy backgrounds:** do it by position, not effects. The light rim around characters was tried and rejected ("don't like the soft thin glow"). Crowds are laid out in rows on the open floor only.
+    - **When a baked-in object can't be reached cleanly** (the diner booths box in every table), give the character a code-drawn prop in the open aisle (the busboy's own cafe table) rather than standing in or behind the furniture.
+  - **Text (round 4 feedback: "way over the top"):**
+    - headlines show only the important numbers and terms: 1,200 / 15,600 / 7X→21X; MID-LOW 700S / AUTHORIZED USERS; 14 MILLION / 50,000 A MONTH / 4,000+ MEMBERS / UP TO 500,000 / AS LOW AS 0%;
+    - one small line at the top of the panel, never over a character or a key prop;
+    - the story beats (busboy, no connections, parents, friends, travel) are told by the animation alone;
+    - the call to action is a bouncing arrow with no text.
+  - **Boss sunglasses:** two shaped lenses with a two-pixel glint, a gold brow bar and bridge, and a temple to the ear (not one black bar).
   - **Keep in mind:**
     - banners auto-shrink to fit the 180-px window;
     - walking paths must keep the avatar's head inside the window;
