@@ -97,7 +97,7 @@ Round 1 films are `films/cce-ft*`, round 2 films `films/cce-r2-*`; per-clip data
 
 | Style | Round 1 (clip → latest) | Round 2 (clip → latest) |
 |---|---|---|
-| 04 Instructional Diagrams | Video 4 → `..._footage-video04_v06` | Video 19 → `..._r2-video19-six-boxes_v05` |
+| 04 Instructional Diagrams | Video 4 → `..._footage-video04_v06` | Video 19 → `..._r2-video19-six-boxes_v06` |
 | 05B Toy Brick 3D | Video 24 → `..._footage-video24_v06` | Video 17 → `..._r2-video17-moving-limits_v04` |
 | 06 Money | Video 29 → `..._footage-video29_v06` | Video 12 → `..._r2-video12-the-fee_v03` |
 | 09 Desktop Mind | VSL #2 → `..._footage-vsl2-busboy_v03` | VSL #5 → `..._r2-vsl5-skill-for-life_v02` |

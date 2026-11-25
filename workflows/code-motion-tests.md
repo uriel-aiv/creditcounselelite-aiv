@@ -96,4 +96,4 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
   - A headline or caption keeps clear of the object it names and of any moving accents (coins, rings, trails). Moving accents travel on paths that stay outside the text's bounds for the whole move, not only on the frame that was checked.
   - In motion-only moments the panel is scaled up (about 1.25x in the 2D styles), so check those spans separately: things that fit in the split layout can collide there.
 - **06 Money, motion-only clock** — the clock is 1.4x at the top half and the coins orbit it at a fixed radius outside the face; "REALLY QUICK" sits below the orbit.
-- **04 Instructional, six-box sheet** — box number in the corner, icon in the left half at 0.78x, label fitted into the right half and centred on the box's height.
+- **04 Instructional, six-box sheet** — box number inset from the corner (clear of the box line by at least its own stroke width; the drawn lines wobble), icon in the left half at 0.78x, label fitted into the right half and centred on the box's height.
