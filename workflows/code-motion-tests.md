@@ -156,6 +156,23 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - rooms change with a 4x4 Bayer dither dissolve;
     - headlines are a 5x7 pixel font on a navy Habbo notice banner with a gold top rule, typed in letter by letter;
     - no motion blur (samples 1), and the seam is a gold rule.
+  - **Round 2 feedback ("choppy in and out; zoom; more movement"):**
+    - **Camera:** eased per-scene keys `[t, cx, cy, zoom]`, interpolated in log-zoom with a slow drift, drawn with nearest-neighbour so pixels stay hard. It pushes in before each cut and pulls out after.
+    - **Cuts:** a retro mosaic (the frame drops to big blocks and builds back up over ±0.16 s); no dither dissolve.
+    - **Ambient life in every room**, from masks found in the retraced art:
+      - water shimmers in moving bands;
+      - windows and lamps flicker;
+      - glints travel across gold;
+      - twinkle sprites appear;
+      - birds flap across the sky.
+    - **Objects move:**
+      - cash bricks drop with gravity and bounce;
+      - notes flutter down on "free cash";
+      - confetti bursts on cheers;
+      - the statement shakes as it prints;
+      - the case bobs as he walks.
+    - **Banners:** spring down, type in, then lift and fade out (never reverse-type).
+    - **Framing:** keep the avatar's head below the banners (avatar in the lower 60% of the panel). The disclaimer sits above the caption pill.
   - **Keep in mind:**
     - banners auto-shrink to fit the 180-px window;
     - walking paths must keep the avatar's head inside the window;
