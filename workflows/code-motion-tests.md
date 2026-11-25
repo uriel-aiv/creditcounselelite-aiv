@@ -125,6 +125,19 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - "combine" riffles two piles into one;
     - the 0% card drops face up on top;
     - the house of cards is placed card by card, so the top pair lands on "stack it up".
+  - **Second test (Video 14, film `cce-r2-18d-cards3d`):**
+    - the card blocks new transactions: small cards bounce off it;
+    - it lies down and the balance is dealt onto it under a floating gold "LIMIT" card, leaving a visible gap (the availability);
+    - two cards (a transaction, a subscription) fill the gap;
+    - a tremor builds, then maroon interest cards rain on top and push the limit card up;
+    - on "all of it" the whole balance turns maroon from bottom to top;
+    - in the host shot the pile topples, and three small piles fall in turn for "a few times";
+    - the card stands up on "call in" and rocks on "complain";
+    - everything rewinds into a white pile while the interest cards lift away.
+  - **Shared rules:**
+    - interest or cost is shown with playbook maroon on the cards themselves;
+    - a claim about what a bank will do is hedged ("THEY MAY REVERSE IT");
+    - camera framings are fitted to the actual scene at key times (`framesAt(t)`), so new scenes frame themselves.
   - **Keep in mind:**
     - flight arcs must stay below the headline (lift no more than about 1.4 units for the transfer);
     - start the first build after the founder panel has finished sliding away (≥1.15 s on this clip), or cards appear at the frame edge.
