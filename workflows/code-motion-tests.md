@@ -141,3 +141,22 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
   - **Keep in mind:**
     - flight arcs must stay below the headline (lift no more than about 1.4 units for the transfer);
     - start the first build after the founder panel has finished sliding away (≥1.15 s on this clip), or cards appear at the frame edge.
+- **19 Pixel Wealth (new style, 2026-11-25)** — "ultra wealthy" life in Habbo-style isometric pixel art, with no realistic people. Film: `motion-kit/films/cce-ft19-pixel` (Video 3, sign-up bonuses).
+  - **Pipeline:**
+    - **Rooms:** generated with GPT Image 2.6 Sunburst in AIVideo (Standard, high, 7 credits each): penthouse, private vault, private airfield, island villa. Prompts ask for Habbo-style 2:1 isometric, 1-px dark outlines, flat 2–3 tone shading, no people, no text, no logos, no currency symbols.
+    - **Retrace:** each room is put on a true pixel grid with `tools/pixel-retrace.py in.png out.png 216 40` (box-average to 216x216, 40-colour k-means palette, no dithering, stray single pixels removed).
+    - **Characters, props, headlines and transitions are drawn in code** on the same grid, so they animate frame-exactly:
+      - the avatar is a code-drawn sprite: big head, black sunglasses, slicked hair, navy blazer, gold chain;
+      - animations: walk (4 frames), wave (2), cheer (2), carry (4);
+      - props: case, banded cash brick (plain green, no symbols), gold bar, black card, jet, thought bubble, sparkles.
+    - **Sprite sheet:** `node tools/sprite-sheet.mjs films/cce-ft19-pixel out.png` exports the avatar's sheet; the current one is `assets/avatar-sprite-sheet.png`.
+  - **Look:**
+    - one art pixel is 6x6 screen pixels;
+    - the camera window is 180 art px wide and follows the avatar in whole-pixel steps (never smoothed);
+    - rooms change with a 4x4 Bayer dither dissolve;
+    - headlines are a 5x7 pixel font on a navy Habbo notice banner with a gold top rule, typed in letter by letter;
+    - no motion blur (samples 1), and the seam is a gold rule.
+  - **Keep in mind:**
+    - banners auto-shrink to fit the 180-px window;
+    - walking paths must keep the avatar's head inside the window;
+    - a cross over a thought is drawn on the grid and centred on the plane.

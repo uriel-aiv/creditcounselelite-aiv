@@ -1,0 +1,10 @@
+import { chromium } from 'playwright';
+import fs from 'fs';
+import http from 'http'; import path from 'path';
+const root = process.argv[2];
+const srv = http.createServer((q, s) => { const f = path.join(root, decodeURIComponent(q.url.split('?')[0])); fs.readFile(f, (e, d) => { if (e) { s.writeHead(404); s.end(); return; } const ext = path.extname(f); s.writeHead(200, { 'content-type': { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.woff2': 'font/woff2' }[ext] || 'application/octet-stream' }); s.end(d); }); }).listen(8765);
+const b = await chromium.launch(); const p = await b.newPage();
+await p.goto('http://localhost:8765/index.html?render=1&format=9x16');
+await p.waitForFunction(() => window.__sheet, null, { timeout: 60000 });
+const d = await p.evaluate(() => window.__sheet); fs.writeFileSync(process.argv[3], Buffer.from(d.split(',')[1], 'base64'));
+await b.close(); srv.close();
