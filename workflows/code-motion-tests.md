@@ -110,3 +110,21 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
   - **Framing:** each shape is auto-fitted (about 860 x 470 px) below the headline, centred on the panel. The disclaimer sits under the headline, never at the seam, where the caption pill covers it.
   - **Sound:** card flicks follow the build wave, a whoosh and a run of landing ticks accompany each flock, and riffles and clicks mark each train arriving.
   - **Second test (Video 12, film `cce-r2-18b-cards`):** "3%" builds; a hero card with a gold "3%" tag pops on "fee"; one bank becomes three banks on "other banks"; a clock ring with 12 month ticks sweeps on "the last year"; "5%"; then on "flat fee" the cards fly into one row and topple flat like dominoes. Shapes, timings and sounds all live in the film; the engine (card drawing, shape sampling, flock morph, ripple, build, auto-fit) is identical in both films, so copy a `cce-r2-18*` film to start a new clip.
+- **18C Card Structures 3D (variant of 18, 2026-11-25)** — reference: a house of playing cards. Same white credit cards on riso blue, but built into real 3D structures; the card ribbon is kept wherever a flat ribbon reads better (the ring under the hero card). Film: `motion-kit/films/cce-r2-18c-cards3d` (Video 17).
+  - **Cards:** every card is a true 3D plane with a long axis, a short axis and a scale. The front is white with card art (chip, numbers, rings, optional gold tag); the back is blue with a dark magnetic stripe and a white signature strip. Each card is lit by one key light (high, front-left), with brightness from its face angle, and painter-sorted by depth toward the viewer. All shadows are projected onto the ground along the light, drawn opaque on one layer, then laid down at 26% so overlaps don't darken. Mirrored art is flipped so text always reads.
+  - **Structures:**
+    - bank: a stepped base of flat cards, four cards standing on end as columns (fronts to the viewer), a beam of flat cards and a pediment of two cards leaning at about 30°;
+    - piles: flat cards 0.035 apart, with slight jitter and yaw;
+    - house of cards: four levels of leaning pairs at about 19° from vertical, with flat floor cards between levels.
+  - **Motion:**
+    - parts drop in bottom-up with gravity and a settle;
+    - cards fly in staggered flocks with a low arc and whole tumbles, so they land in the right orientation;
+    - the transfer deals cards one by one from pile A to pile B, with a tick on each landing;
+    - the 0% card turns once on the spot;
+    - "20,000" deals a tall pile;
+    - "combine" riffles two piles into one;
+    - the 0% card drops face up on top;
+    - the house of cards is placed card by card, so the top pair lands on "stack it up".
+  - **Keep in mind:**
+    - flight arcs must stay below the headline (lift no more than about 1.4 units for the transfer);
+    - start the first build after the founder panel has finished sliding away (≥1.15 s on this clip), or cards appear at the frame edge.
