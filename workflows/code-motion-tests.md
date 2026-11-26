@@ -1,9 +1,9 @@
 # Code motion tests — founder split-screen rules and per-style notes
 
 Purpose: the rules and decisions behind the code-rendered CCE motion tests, so any future build follows the same direction.
-Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2026-11-25 (footage rounds 1–2, QA pass, Toy Brick physics).
+Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2026-11-25 (footage rounds 1–2, QA pass, Toy Brick physics, styles 18–20, playbooks).
 
-**To build or change a film, use `motion-kit/` (code, art, tools) and follow `motion-kit/README.md` step by step.** This file holds the rules; add every new piece of feedback here in the same turn you act on it.
+**To build or change a film, use `motion-kit/` (code, art, tools): the current recipe for each style is in `motion-kit/styles/<style>.md`, the full process in `new-footage-test.md`.** This file holds the rules and the feedback history (older rounds stay here for context; where a later round changed something, the later round and the playbook win). Add every new piece of feedback here and to the playbook in the same turn you act on it.
 
 ## Format
 - Founder split-screen. Motion on the **top half**, founder on the **bottom half**.
@@ -203,7 +203,7 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - headlines are always 1x pixel text (about 28 px tall on a 720 px frame) at the very top of the panel; never scale them up, even for short numbers.
   - **Boss sunglasses:** two shaped lenses with a two-pixel glint, a gold brow bar and bridge, and a temple to the ear (not one black bar).
   - **Keep in mind:**
-    - banners auto-shrink to fit the 180-px window;
+    - banners auto-shrink to fit the 180-px window (and since round 5 they are always 1x);
     - walking paths must keep the avatar's head inside the window;
     - a cross over a thought is drawn on the grid and centred on the plane.
 
@@ -213,7 +213,8 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - edit that same image with Nano Banana 2.1: "remove the subject, fill what would be behind, keep everything else the same" to get the clean background plate;
     - generate props (cash, statement, passport) as product shots on plain white;
     - cut everything out with `python3 motion-kit/tools/collage/make_layers.py` (the plate difference bounds the person; a people-only model gives the clean edge). A general model alone also grabs nearby objects (the jet, the lounger).
-  - **Effects, all in code on top of plain photos:**
+  - *Round 1 below is superseded where round 2 changed it (no whips or fog wipes → light leaks; Anton → glowing serif; parallax push → full 2.5D camera; no fake walk). Current recipe: `motion-kit/styles/20-photo-collage-2-5d.md`.*
+  - **Effects, all in code on top of plain photos (round 1):**
     - camera push with parallax (plate takes 0.6 of the push, subject 1.35);
     - each shot opens defocused and snaps sharp;
     - props drop onto the desk: big and blurred when high, shadow tightens on landing, small squash;
@@ -222,7 +223,7 @@ Source: the creative lead's direction in chat, Nov 19–25 2026. Last updated: 2
     - glow pulses on money, a gold rim behind the subject on the numbers, a sun flare, glints;
     - hand-drawn marker strokes (circle around the statement line, red X over the passport);
     - film grain, vignette, a faint permanent colour fringe.
-  - **Type:** Anton caps, one gold word, each word pops in sharp from a blur; ticking counters for the key numbers; never over a head or the prop being talked about.
+  - **Type (round 1, superseded by the glowing serif):** Anton caps, one gold word, each word pops in sharp from a blur; ticking counters for the key numbers; never over a head or the prop being talked about.
   - **Layout:** split-screen for the talk, full-screen photos from the fog wipe on. In the split panel, frame the subject low enough that headline + disclaimer sit above the head (the office shot's disclaimer sits under the headline, not over the cards).
   - **Round 2 feedback ("not there yet", "no fake walk", "flat image style", textures, light leaks, glowy serif, Posterize Time):**
     - never puppet people: no fake walks, bobs or poses. Subjects stay still; all motion is the camera moving through depth and elements flying in;

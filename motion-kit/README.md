@@ -1,9 +1,11 @@
 # CCE motion kit — code-rendered founder split-screen tests
 
 Purpose: everything a new chat or agent needs to rebuild, change and deliver the CCE code motion tests exactly as they were made: film source, generated art, render/sound/mix tools, setup and delivery steps.
-Source: built with the CCE creative lead in chat, Nov 19–25 2026. Last updated: 2026-11-25.
+Source: built with the CCE creative lead in chat, Nov 19–25 2026. Last updated: 2026-11-25 (style playbooks, prompts, runbook).
 
-**Read first, every time:** `../workflows/code-motion-tests.md` (the rules and every piece of feedback per style), `../business/compliance-and-legal.md`, `../visual/brand-guide.md`. The rules there beat anything you'd do by default.
+**Read first, every time:** `styles/README.md` (how every style is made: one playbook per style), `../workflows/new-footage-test.md` (raw clip → delivered film → AIVideo canvas, step by step), `../workflows/code-motion-tests.md` (the rules and every piece of feedback per style), `../business/compliance-and-legal.md`, `../visual/brand-guide.md`. The rules there beat anything you'd do by default.
+
+**Prompts** for all generated art: `../prompts/`.
 
 ## What the films are
 - One 59 s founder clip (`highlights_1x1.mp4`, 1080x1080, 23.976 fps, 56.6 s) cut into a vertical split-screen: **motion on top, founder below**, going full-screen founder on the key lines, then a brand end card from 56.6 s.
@@ -16,10 +18,16 @@ motion-kit/
   setup.sh          one-time: npm deps, Chromium, footage frames, audio stems
   stills.sh         QA stills at chosen seconds (look at them before any full render)
   render-film.sh    full render -> SFX -> mix -> delivery MP4
+  styles/           one playbook per style (look, assets, engine, new-clip steps, must/never) + the shared film anatomy
+  requirements.txt  python deps for tools/footage and tools/collage
+  tools/footage/    clip prep: tr.py (whisper), shots.py, faces.py, prep.py (founder track), mkft.py (new film), ftrender.sh
+  tools/pixel/      19 Pixel Wealth: build.py (engine + scene file -> film), scene files, extras.js, common_tail.js, waypoints.py
+  tools/collage/    20 Photo Collage: make_layers.py (plate + subject cut-outs, --prop [--solid]), split_grid.py
   tools/            render.mjs (frame-exact renderer), pw.mjs, sfx.mjs + mix.mjs (motion-reel skill copies),
                     brand.js (brand captions + end card + Anton caps hook), mkbrand.py (made the *-brand copies),
                     accent.py (line-anchored palette patcher), cutfx.py / printfx.py / trfx.py (built the Vox paper pieces),
-                    shot.mjs (screenshots of an HTML page)
+                    shot.mjs (screenshots of an HTML page), pixel-retrace.py (AI image -> true pixel grid),
+                    sprite-sheet.mjs (19's avatar sprite sheet)
   films/<film>/     index.html, film.js, film.json, lib/motion.js (+ lib/brand.js), fonts/, assets/, beats.json
   films/<film>/assets/footage -> ../../../footage   (frames, made by setup.sh, not committed)
   bg-tests/         cce_bg-tests_v02.html — the background study; 17 Brand Native uses variant B
@@ -47,7 +55,7 @@ The code in `films/` is the state of the latest version in this table. Next deli
 cd motion-kit
 ./setup.sh "$CCE_ROOT/highlights/highlights_1x1.mp4"   # or wherever your copy of the clip is
 ```
-Needs node 18+, ffmpeg, and for the asset scripts python3 + Pillow. In a cloud session, stage the clip first (it is 1080x1080, ~57 s) and pass that path. Expect 1358 frames.
+Needs node 18+, ffmpeg, and python3 with `pip install -r requirements.txt` (whisper, opencv, rembg, pymatting, scipy, Pillow). In a cloud session, stage the clip first (it is 1080x1080, ~57 s) and pass that path. Expect 1358 frames.
 
 **Shared folder:** the scripts never assume a personal path. Set `CCE_ROOT` to your local copy of the team's shared CCE folder (the one that holds `highlights/`, `footage-tests/` and `motion-tests/`), for example `export CCE_ROOT=~/CCE`. The footage tools read clips from `FT_SRC` (default `$CCE_ROOT/footage-tests`).
 
@@ -110,22 +118,23 @@ Round 1 films are `films/cce-ft*`, round 2 films `films/cce-r2-*`; per-clip data
 | **19 Pixel Wealth (new)** | Video 3 → `cce_19-pixel-wealth_footage-video03_v05` (film `cce-ft19-pixel`) | Video 24 → `cce_19-pixel-wealth_footage-video24-authorized-users_v04` (`cce-ft19b-pixel`); VSL #2 → `cce_19-pixel-wealth_footage-vsl2-busboy_v04` (`cce-ft19c-pixel`) |
 | **20 Photo Collage 2.5D (new)** | Video 3 → `cce_20-photo-collage_footage-video03_v03` (film `cce-ft20-collage`) | VSL #2 → `cce_20-photo-collage_footage-vsl2-busboy_v02` (`cce-ft20b-collage`) |
 
-### Pipeline for a new clip (run from `motion-kit/tools/footage/`, `FT_SRC` = folder of clips)
+### Pipeline for a new clip (full version: `../workflows/new-footage-test.md`; run the prep tools in `motion-kit/footage-tests/`, `FT_SRC` = folder of clips)
 1. **Get the clip.** Drive downloads are blocked from cloud shells; download in the browser (or ask the creative lead) into `$CCE_ROOT/footage-tests/`, then stage it.
-2. **Transcribe** with word timings: `python3 tr.py` (faster-whisper; `WHISPER_MODEL` = model path or name). Fix obvious mishears in the film's `assets/words.json` (e.g. "Dragotour" → "charge-off", "turn off" → "return off").
-3. **Find the cuts + thumbnails**: `python3 shots.py` → `shots.json`, `shots_<clip>.png`. Look at every shot.
-4. **Find Brandon's face per shot**: `python3 faces.py` (Haar cascade; `HAAR` = path to `haarcascade_frontalface_default.xml`).
-5. **Build the founder track**: `python3 prep.py <clip>` → `footage-tests/<clip>/` frames (1080², 23.976 fps, crop follows the face per shot), `audio/vo.wav` (cut 0.45 s after the last word), silent music, words in film time, `plan.json`.
+2. **Transcribe** with word timings: `python3 ../tools/footage/tr.py` (faster-whisper; `WHISPER_MODEL` = model path or name). Fix obvious mishears in the film's `assets/words.json` (e.g. "Dragotour" → "charge-off", "turn off" → "return off").
+3. **Find the cuts + thumbnails**: `python3 ../tools/footage/shots.py` → `shots.json`, `shots_<clip>.png`. Look at every shot.
+4. **Find Brandon's face per shot**: `python3 ../tools/footage/faces.py` (Haar cascade; `HAAR` = path to `haarcascade_frontalface_default.xml`).
+5. **Build the founder track** (add the clip to `CFG` in prep.py first): `python3 ../tools/footage/prep.py <clip>` → `footage-tests/<clip>/` frames (1080², 23.976 fps, crop follows the face per shot), `audio/vo.wav` (cut 0.45 s after the last word), silent music, words in film time, `plan.json`.
    - Podcast single shots: square ≈ 3.4× the face box, face at 36 % from the top.
    - Podcast side-by-side shots (Brandon = right half): keep the crop **inside the source's white frame lines** (x 970–1882, y 46–1034), or a border shows.
    - Host-only or wide shots with no usable face → that span becomes a motion-only moment.
    - VSL (vertical, burned-in captions): fixed crop `(200, 30, 680)` = face and shoulders above the captions. Check a 4 fps sheet (`ffmpeg ... fps=4,tile`) for spans where graphics or b-roll cover the face; those are motion-only. Never show a VSL founder full-screen (their captions would clash with ours). Trim leading title cards with `CFG` offset (VSL #6 starts at 2.75 s).
-6. **Make the film**: `python3 mkft.py films/<approved-brand-film> <clip> films/cce-ftNN-<style>`, then rewrite the sections for the new script in that style's own helpers (see any `cce-ft*` film): set `END` (= plan end) and `window.__END` (brand end card starts there), `FH_KEYS` from a layout of `0` (motion only, voiceover) / `SEAM` (split) / `1920` (full founder), `SRC_FRAMES`, `HITS`, `FAST`/`BUSY`, claim windows.
+6. **Make the film** (from `motion-kit/`): `python3 tools/footage/mkft.py films/<newest film of the style> <clip> films/cce-ftNN-<style>`, then follow `styles/<style>.md`, then rewrite the sections for the new script in that style's own helpers (see any `cce-ft*` film): set `END` (= plan end) and `window.__END` (brand end card starts there), `FH_KEYS` from a layout of `0` (motion only, voiceover) / `SEAM` (split) / `1920` (full founder), `SRC_FRAMES`, `HITS`, `FAST`/`BUSY`, claim windows.
    - Motion-only moments: `Y()` centres the panel (`y + (SEAM - FH) * 0.48`) and the section group scales up to 1.25× (`m = 1 + 0.25 * clamp(1 - fh / SEAM)`), so graphics fill the frame. Check nothing runs off the sides at 1.25×.
    - Captions in motion-only moments sit at y 1640 (brand.js handles it).
-7. **Stills, then render**: QA stills at every beat (the first still in a batch can be a warm-up glitch: re-render it alone before judging). Then `./render-film.sh <film> <name> <out-dir> <sfx-db>` (VSLs have their own music bed: use `-12`; podcasts `-9`). Before delivering, run the QA in `../workflows/motion-qa-checklist.md` on the encoded MP4.
+7. **Stills, then render**: QA stills at every beat (the first still in a batch can be a warm-up glitch: re-render it alone before judging). Then `tools/footage/ftrender.sh <film> <name> <sfx-db>` (or `./render-film.sh <film> <name> <out-dir> <sfx-db>`) (VSLs have their own music bed: use `-12`; podcasts `-9`). Before delivering, run the QA in `../workflows/motion-qa-checklist.md` on the encoded MP4.
 
 ## Known gaps
+- The prompts for the round-1 art of 09, 11, 12 and 16 are not copied into `../prompts/` yet; they are stored on each asset in the AIVideo project "CCE Art Direction" (how to read them: `../prompts/README.md`).
 - The real **Have Heart Two** and **Neoneon** fonts are not in the kit (17 Brand Native draws neon as glowing strokes on Anton and the brush in code). If the team supplies the files, add them to `films/cce-brandnative/fonts/` and register them in `index.html`.
 - Footage frames and audio are not committed (large, and they come from one source clip). `setup.sh` rebuilds them exactly.
 - `mkbrand.py` documents how the `-brand` copies were made from the originals; the copies already exist, so you only need it to rebrand a new style.

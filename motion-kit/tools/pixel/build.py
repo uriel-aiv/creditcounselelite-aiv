@@ -1,4 +1,8 @@
-# build a pixel film from the 19 engine: python3 build.py <film-dir> <scenes.js> <title>
+# Build a 19 Pixel Wealth film from the engine (films/cce-ft19-pixel/film.js) + a scene file.
+# Usage (from motion-kit/): cat tools/pixel/sceneB.js tools/pixel/common_tail.js > /tmp/scene.js
+#                           python3 tools/pixel/build.py films/<new-film> /tmp/scene.js "VSL #2 busboy"
+# <new-film> must already exist (make it with tools/footage/mkft.py films/cce-ft19-pixel <clip> films/<new-film>),
+# with the rooms it uses in assets/bg/<room>.png. The scene file's first line carries //SRC_FRAMES=<frames>.
 import sys, re, os
 HERE = os.path.dirname(os.path.abspath(__file__))
 KIT = os.path.normpath(os.path.join(HERE, '..', '..'))

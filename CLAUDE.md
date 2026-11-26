@@ -8,7 +8,7 @@ This repo is the second brain for the **Credit Counsel Elite (CCE)** brand.
 3. Use only facts found here. If a number or claim is not in this repo, flag it rather than inventing it.
 4. File new knowledge in the right folder; put unsorted material in `inbox/`.
 5. Workflows go in `workflows/` as step-by-step markdown; reusable prompts go in `prompts/`.
-6. Motion tests (code-rendered founder split-screens): read `workflows/code-motion-tests.md`, then work in `motion-kit/` following `motion-kit/README.md`. Run `workflows/motion-qa-checklist.md` on every encoded film before delivering. Record new feedback in the workflow doc and commit it.
+6. Motion tests (code-rendered founder split-screens): read `motion-kit/styles/README.md` and the style's playbook, follow `workflows/new-footage-test.md` step by step, and work in `motion-kit/` (`motion-kit/README.md`). Rules and feedback history: `workflows/code-motion-tests.md`. Art prompts: `prompts/`. Run `workflows/motion-qa-checklist.md` on every encoded film before delivering. Record new feedback in the workflow doc and the style's playbook, and commit it.
 7. Never write personal machine paths (home folders, user names) into this repo. Use `$CCE_ROOT` for the team's shared CCE folder.
 
 ## Conventions

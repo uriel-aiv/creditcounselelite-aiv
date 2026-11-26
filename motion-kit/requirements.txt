@@ -1,0 +1,10 @@
+# Python tools of the CCE motion kit (python 3.10+). Install: pip install -r requirements.txt
+# Footage prep (tools/footage): transcription, shot detection, face tracking
+faster-whisper>=1.0
+opencv-python-headless>=4.8
+numpy>=1.24
+Pillow>=10.0
+scipy>=1.11
+# Collage cut-outs (tools/collage): segmentation models download from GitHub on first use (~180 MB each)
+rembg[cpu]>=2.0.50
+pymatting>=1.1.12
